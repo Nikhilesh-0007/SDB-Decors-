@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Car, Lock, Mail, Loader2 } from 'lucide-react';
+import { Lock, Mail, Loader2 } from 'lucide-react';
 import { verifyAdminCredentials } from './login-action';
 
 export default function AdminLoginPage() {
@@ -31,7 +31,6 @@ export default function AdminLoginPage() {
 
     try {
       const result = await verifyAdminCredentials(email, password);
-      
       if (result.success) {
         sessionStorage.setItem('sgb_admin', 'true');
         router.push('/admin/dashboard');
@@ -39,7 +38,7 @@ export default function AdminLoginPage() {
         setError(result.error || 'Invalid credentials.');
         setIsLoggingIn(false);
       }
-    } catch (err) {
+    } catch {
       setError('Connection failed. Please try again.');
       setIsLoggingIn(false);
     }
@@ -47,95 +46,96 @@ export default function AdminLoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center text-white">
-        <div className="animate-pulse flex items-center space-x-2 text-sm font-semibold">
-          <span>Loading admin panel...</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B0F0C' }}>
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: '#D6A313' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-dark flex items-center justify-center px-4 py-12">
-      {/* Centered Login Card */}
-      <div className="w-full max-w-md bg-dark border border-white/10 rounded-xl p-8 shadow-2xl space-y-6 text-center">
-        {/* SGB Decors Logo */}
-        <div className="flex flex-col items-center space-y-2">
-          <Car className="h-10 w-10 text-primary fill-primary" />
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">
-            SGB <span className="text-primary">Decors</span>
-          </h1>
-          <p className="text-xs text-white/50 uppercase tracking-widest">
-            Administrative Control Panel
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: '#0B0F0C' }}>
+      <div
+        className="w-full max-w-sm space-y-8 text-center"
+        style={{ background: '#111811', border: '1px solid rgba(214,163,19,0.22)', borderRadius: '16px', padding: '40px 32px' }}
+      >
+        {/* Logo */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="#D6A313" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+              <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+              <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2" />
+              <path d="M9 17h6" />
+              <path d="M14 7l-3 5h5" />
+            </svg>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 700, color: '#F8F3E8' }}>
+              SGB <span style={{ color: '#D6A313' }}>Decors</span>
+            </span>
+          </div>
+          <p style={{ color: '#9AA397', fontSize: '12px', fontFamily: 'Inter, sans-serif', letterSpacing: '0.06em', fontWeight: 500 }}>
+            ADMIN CONTROL PANEL
           </p>
         </div>
 
-        {/* Login Form */}
+        {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4 text-left">
-          {/* Email Address */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="email"
-              className="text-xs font-bold text-white/75 uppercase tracking-wider block"
-            >
-              Email Address / Username
+          <div>
+            <label style={{ color: '#9AA397', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif', letterSpacing: '0.06em' }} className="block mb-1.5">
+              EMAIL
             </label>
             <div className="relative">
               <input
                 type="email"
-                id="email"
                 placeholder="admin@sgbdecors.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 pl-10 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-white/25"
                 required
                 disabled={isLoggingIn}
+                className="w-full pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#D6A313]/50"
+                style={{ background: '#0B0F0C', border: '1px solid rgba(214,163,19,0.18)', borderRadius: '10px', color: '#F8F3E8', fontFamily: 'Inter, sans-serif' }}
               />
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-white/35" />
+              <Mail className="absolute left-3 top-3.5 h-4 w-4" style={{ color: '#9AA397' }} />
             </div>
           </div>
 
-          {/* Password */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="password"
-              className="text-xs font-bold text-white/75 uppercase tracking-wider block"
-            >
-              Password
+          <div>
+            <label style={{ color: '#9AA397', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif', letterSpacing: '0.06em' }} className="block mb-1.5">
+              PASSWORD
             </label>
             <div className="relative">
               <input
                 type="password"
-                id="password"
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 pl-10 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-white/25"
                 required
                 disabled={isLoggingIn}
+                className="w-full pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#D6A313]/50"
+                style={{ background: '#0B0F0C', border: '1px solid rgba(214,163,19,0.18)', borderRadius: '10px', color: '#F8F3E8', fontFamily: 'Inter, sans-serif' }}
               />
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-white/35" />
+              <Lock className="absolute left-3 top-3.5 h-4 w-4" style={{ color: '#9AA397' }} />
             </div>
           </div>
 
           {error && (
-            <p className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-2 rounded-lg">
-              ⚠️ {error}
+            <p className="text-xs font-semibold px-3 py-2.5" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', fontFamily: 'Inter, sans-serif' }}>
+              {error}
             </p>
           )}
 
           <button
             type="submit"
             disabled={isLoggingIn}
-            className="w-full inline-flex items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/95 transition-all duration-200 cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-center py-3 text-sm font-bold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#D6A313', color: '#101510', borderRadius: '10px', fontFamily: 'Inter, sans-serif', minHeight: '46px', marginTop: '8px' }}
           >
             {isLoggingIn ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Checking Credentials...
+                Verifying...
               </>
             ) : (
-              'Enter Admin'
+              'Sign In'
             )}
           </button>
         </form>

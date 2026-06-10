@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, slugify } from '@/lib/utils';
 
-type Tab = 'dashboard' | 'hero' | 'products' | 'categories' | 'coupons' | 'orders';
+type Tab = 'dashboard' | 'hero' | 'products' | 'categories' | 'coupons' | 'orders' | 'announcements';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -27,6 +27,10 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcementForm, setAnnouncementForm] = useState({ message: '', sort_order: 0, is_active: true });
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
   // Search & Filters
   const [orderSearch, setOrderSearch] = useState('');
@@ -88,6 +92,10 @@ export default function AdminDashboard() {
       const { data: ords } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
       const loadedOrds = ords || [];
       setOrders(loadedOrds);
+
+      // Load Announcements
+      const { data: annoData } = await supabase.from('announcements').select('*').order('sort_order', { ascending: true });
+      if (annoData) setAnnouncements(annoData);
 
       // Set Stats
       setStats({
@@ -323,7 +331,8 @@ export default function AdminDashboard() {
             { id: 'products', label: 'Products', icon: Box },
             { id: 'categories', label: 'Categories', icon: Folder },
             { id: 'coupons', label: 'Coupons', icon: Ticket },
-            { id: 'orders', label: 'Orders Log', icon: ClipboardList }
+            { id: 'orders', label: 'Orders Log', icon: ClipboardList },
+            { id: 'announcements', label: 'Announcements', icon: Info }
           ].map(item => {
             const Icon = item.icon;
             return (
@@ -376,7 +385,8 @@ export default function AdminDashboard() {
             { id: 'products', label: 'Products', icon: Box },
             { id: 'categories', label: 'Categories', icon: Folder },
             { id: 'coupons', label: 'Coupons', icon: Ticket },
-            { id: 'orders', label: 'Orders Log', icon: ClipboardList }
+            { id: 'orders', label: 'Orders Log', icon: ClipboardList },
+            { id: 'announcements', label: 'Announcements', icon: Info }
           ].map(item => {
             const Icon = item.icon;
             return (
@@ -541,7 +551,7 @@ export default function AdminDashboard() {
                       )}
                       <div className="absolute inset-0 bg-dark/70" />
                       <div className="absolute inset-0 flex flex-col justify-center p-6 space-y-2">
-                        <span className="text-[9px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded uppercase self-start">⚡ PREVIEW</span>
+                        <span className="text-[9px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded uppercase self-start">âš¡ PREVIEW</span>
                         <h3 className="font-display font-bold text-white text-base leading-tight pr-4 border-l-2 border-primary pl-2">{hero.heading || 'Heading'}</h3>
                         <p className="text-white/70 text-[10px] line-clamp-2 leading-relaxed font-light">{hero.subheading || 'Subheading'}</p>
                         <button className="bg-primary text-white text-[10px] font-bold py-1.5 px-3 rounded self-start mt-1">
@@ -910,7 +920,7 @@ export default function AdminDashboard() {
                               <div>
                                 <span className="text-xs text-muted uppercase font-bold tracking-wider">WhatsApp Status</span>
                                 <div className="mt-1.5 text-emerald-600 font-semibold flex items-center space-x-1">
-                                  <span>✓ Triggered</span>
+                                  <span>âœ“ Triggered</span>
                                 </div>
                               </div>
                             </div>
@@ -945,9 +955,194 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+            {/* =========================================================================
+                G. TAB: ANNOUNCEMENTS
+               ========================================================================= */}
+            {activeTab === 'announcements' && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h1 className="font-display text-2xl font-bold text-dark">Announcement Bar</h1>
+                    <p className="text-sm text-muted">Manage scrolling messages shown at the top of the website. Add as many as you want.</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setEditingAnnouncementId(null);
+                      setAnnouncementForm({ message: '', sort_order: announcements.length, is_active: true });
+                      setShowAnnouncementModal(true);
+                    }}
+                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Message</span>
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="bg-bg text-muted border-b border-border/60 font-semibold text-xs uppercase tracking-wider">
+                        <th className="p-4">Order</th>
+                        <th className="p-4">Message</th>
+                        <th className="p-4 text-center">Active</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {announcements.map(ann => (
+                        <tr key={ann.id} className="hover:bg-bg/25">
+                          <td className="p-4 text-muted font-mono text-xs">{ann.sort_order}</td>
+                          <td className="p-4 font-medium text-dark">{ann.message}</td>
+                          <td className="p-4 text-center">
+                            <button 
+                              onClick={async () => {
+                                const newVal = !ann.is_active;
+                                setAnnouncements(prev => prev.map(a => a.id === ann.id ? { ...a, is_active: newVal } : a));
+                                await supabase.from('announcements').update({ is_active: newVal }).eq('id', ann.id);
+                              }}
+                              className="cursor-pointer focus:outline-none"
+                            >
+                              {ann.is_active ? (
+                                <ToggleRight className="h-7 w-7 text-emerald-600" />
+                              ) : (
+                                <ToggleLeft className="h-7 w-7 text-muted" />
+                              )}
+                            </button>
+                          </td>
+                          <td className="p-4 text-right">
+                            <div className="flex justify-end space-x-2">
+                              <button 
+                                onClick={() => {
+                                  setEditingAnnouncementId(ann.id);
+                                  setAnnouncementForm({ message: ann.message, sort_order: ann.sort_order, is_active: ann.is_active });
+                                  setShowAnnouncementModal(true);
+                                }}
+                                className="p-1.5 text-muted hover:text-dark border border-border rounded hover:bg-bg cursor-pointer"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  if (!confirm('Delete this announcement?')) return;
+                                  await supabase.from('announcements').delete().eq('id', ann.id);
+                                  loadAllData();
+                                }}
+                                className="p-1.5 text-muted hover:text-primary border border-border rounded hover:bg-bg cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {announcements.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="p-12 text-center text-muted">
+                            No announcements yet. Add your first scrolling message.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
+                  <p className="font-semibold">ðŸ’¡ How it works</p>
+                  <p className="text-xs text-amber-700 mt-1">All active messages scroll horizontally in the gold bar at the top of your website. Add offers, delivery info, or any short message. They appear in the order you set.</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
+
+      {/* =========================================================================
+          MODAL: ANNOUNCEMENT ADD/EDIT
+         ========================================================================= */}
+      {showAnnouncementModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border">
+            <div className="p-5 border-b border-border flex justify-between items-center bg-bg/40">
+              <h3 className="font-display font-bold text-dark text-base">{editingAnnouncementId ? 'Edit Announcement' : 'Add Announcement'}</h3>
+              <button onClick={() => setShowAnnouncementModal(false)} className="text-muted hover:text-dark cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const payload = {
+                    message: announcementForm.message.trim(),
+                    sort_order: Number(announcementForm.sort_order),
+                    is_active: announcementForm.is_active,
+                  };
+                  if (editingAnnouncementId) {
+                    const { error } = await supabase.from('announcements').update(payload).eq('id', editingAnnouncementId);
+                    if (error) throw error;
+                  } else {
+                    const { error } = await supabase.from('announcements').insert(payload);
+                    if (error) throw error;
+                  }
+                  setShowAnnouncementModal(false);
+                  setEditingAnnouncementId(null);
+                  setAnnouncementForm({ message: '', sort_order: 0, is_active: true });
+                  loadAllData();
+                } catch (err: any) {
+                  alert(`Failed: ${err.message}`);
+                }
+              }}
+              className="p-6 space-y-4"
+            >
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Message Text</label>
+                <input 
+                  type="text"
+                  value={announcementForm.message}
+                  onChange={e => setAnnouncementForm(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="e.g. Free delivery on orders above â‚¹499"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Sort Order (lower = first)</label>
+                <input 
+                  type="number"
+                  value={announcementForm.sort_order}
+                  onChange={e => setAnnouncementForm(prev => ({ ...prev, sort_order: Number(e.target.value) }))}
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center space-x-2 pt-2">
+                <input 
+                  type="checkbox"
+                  id="ann_active"
+                  checked={announcementForm.is_active}
+                  onChange={e => setAnnouncementForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                  className="rounded border-border text-primary focus:ring-primary h-4 w-4"
+                />
+                <label htmlFor="ann_active" className="text-sm font-semibold text-dark cursor-pointer">Active</label>
+              </div>
+              <div className="pt-4 border-t border-border flex justify-end space-x-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAnnouncementModal(false)}
+                  className="px-4 py-2 border border-border rounded-lg text-xs font-bold text-muted hover:bg-bg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/95 cursor-pointer"
+                >
+                  {editingAnnouncementId ? 'Save' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           MODAL: CATEGORIES ADD/EDIT FORM
@@ -1046,7 +1241,7 @@ export default function AdminDashboard() {
                   className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
                 >
                   <option value="percent">Percentage Off (%)</option>
-                  <option value="flat">Flat Amount Off (₹)</option>
+                  <option value="flat">Flat Amount Off (â‚¹)</option>
                 </select>
               </div>
               <div className="space-y-1.5">
@@ -1130,7 +1325,7 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Price (₹)</label>
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Price (â‚¹)</label>
                   <input 
                     type="number"
                     value={productForm.price || ''}

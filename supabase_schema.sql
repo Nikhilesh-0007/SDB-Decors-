@@ -218,3 +218,34 @@ end $$;
 -- Seed Admin Credentials
 insert into public.admin_users (email, password) values
 ('admin@sgbdecors.com', 'SGBdecorsAdmin2026!');
+
+
+-- =========================================================================
+-- 4. Announcements Table (Scrolling bar messages)
+-- =========================================================================
+
+-- Announcements Table
+create table if not exists public.announcements (
+    id uuid default gen_random_uuid() primary key,
+    message text not null,
+    sort_order integer default 0 not null,
+    is_active boolean default true not null,
+    created_at timestamp with time zone default now() not null
+);
+
+-- Enable RLS
+alter table public.announcements enable row level security;
+
+-- Policies
+create policy "Allow public read access to announcements" on public.announcements
+    for select using (true);
+
+create policy "Allow public read/write to announcements" on public.announcements
+    for all using (true) with check (true);
+
+-- Seed default announcements
+insert into public.announcements (message, sort_order, is_active) values
+('Free delivery on orders above ₹499', 1, true),
+('WhatsApp orders welcome', 2, true),
+('Premium quality guaranteed', 3, true),
+('COD available on select items', 4, true);
