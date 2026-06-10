@@ -1,71 +1,78 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&family=Poppins:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --color-primary: #0A7255;   /* deep emerald */
-  --color-primary-light: #0D9268; /* hover emerald */
-  --color-gold: #C9A84C;      /* warm gold accent */
-  --color-dark: #0D1B14;      /* near-black green */
-  --color-bg: #F7F9F8;        /* barely-there mint white */
+  --color-bg: #0B0F0C;
+  --color-surface-dark: #111811;
+  --color-surface-light: #F6F3EC;
+  --color-text: #101510;
+  --color-text-light: #F8F3E8;
+  --color-muted: #8B938A;
+  --color-gold: #D6A313;
+  --color-border: rgba(214,163,19,0.22);
   --color-white: #FFFFFF;
-  --color-text: #1A2B22;      /* deep green-black */
-  --color-muted: #6B7F76;     /* muted sage */
-  --color-border: #E0EBE5;    /* soft green-tinted border */
-  --color-success: #0A7255;
-  
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Playfair Display', 'Poppins', serif;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Playfair Display', serif;
 }
 
 @theme {
-  --color-primary: var(--color-primary);
-  --color-primary-light: var(--color-primary-light);
-  --color-gold: var(--color-gold);
-  --color-dark: var(--color-dark);
-  --color-bg: var(--color-bg);
-  --color-white: var(--color-white);
-  --color-text: var(--color-text);
-  --color-muted: var(--color-muted);
-  --color-border: var(--color-border);
-  --color-success: var(--color-success);
+  --color-primary: #0B0F0C;
+  --color-primary-light: #111811;
+  --color-gold: #D6A313;
+  --color-dark: #0B0F0C;
+  --color-bg: #0B0F0C;
+  --color-surface: #F6F3EC;
+  --color-white: #FFFFFF;
+  --color-text: #101510;
+  --color-muted: #8B938A;
+  --color-border: rgba(214,163,19,0.22);
 
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
-  
-  --radius-lg: 0.75rem;
-  --radius-md: 0.5rem;
+
+  --radius-lg: 12px;
+  --radius-md: 12px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background-color: var(--color-bg);
-  color: var(--color-text);
+  color: var(--color-text-light);
   font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3 {
   font-family: var(--font-display);
+  font-weight: 700;
+}
+
+h4, h5, h6 {
+  font-family: var(--font-sans);
   font-weight: 600;
 }
 
-/* Elegant scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #0B0F0C;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: #2a3a2a;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary);
+  background: var(--color-gold);
 }
 
-/* Pulse animation for WhatsApp Floating Button */
 @keyframes pulse-ring {
   0% {
     transform: scale(0.95);
@@ -83,4 +90,18 @@ h1, h2, h3, h4, h5, h6 {
 
 .whatsapp-pulse {
   animation: pulse-ring 2s infinite;
+}
+
+/* Announcement bar scrolling marquee */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-66.66%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 30s linear infinite;
 }

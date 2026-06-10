@@ -1,42 +1,37 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Truck, ShieldCheck, MessageCircle, Tag } from 'lucide-react';
+import { ArrowRight, Truck, ShieldCheck, MessageCircle, Tag, CheckCircle, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/product-card';
 
-// Custom high-quality automotive category icons if images are not set in the database
 const defaultCategoryImages: Record<string, string> = {
-  'car-styling': 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=600',
   'bike-accessories': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600',
-  'car-protection': 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600',
+  'car-styling': 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=600',
+  'car-protection': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600',
   'led-lighting': 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=600',
 };
 
-export const revalidate = 0; // Disable caching to fetch live hero settings and catalog directly
+export const revalidate = 0;
 
 export default async function Home() {
   let heroSettings = {
-    heading: 'Premium Car & Bike Accessories',
-    subheading: 'Upgrade your ride with high-performance styling, premium lighting, and durable protective gear.',
-    image_url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1600',
-    cta_text: 'Shop Now',
+    heading: 'Upgrade Your Ride With Premium Accessories',
+    subheading: 'Car styling, bike protection, lighting, covers, chargers and daily-use accessories delivered across India.',
+    image_url: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=1600',
+    cta_text: 'Shop Accessories',
   };
 
   let categories: any[] = [];
   let featuredProducts: any[] = [];
 
-  // Direct server-side Supabase fetches with try-catch fallback
   try {
     const { data: heroData } = await supabase
       .from('hero_settings')
       .select('heading, subheading, image_url, cta_text')
       .eq('id', 1)
       .single();
-
-    if (heroData) {
-      heroSettings = heroData;
-    }
+    if (heroData) heroSettings = heroData;
   } catch (err) {
     console.warn('Fallback to default hero settings');
   }
@@ -46,10 +41,7 @@ export default async function Home() {
       .from('categories')
       .select('id, name, slug, image_url')
       .order('name', { ascending: true });
-
-    if (catData) {
-      categories = catData;
-    }
+    if (catData) categories = catData;
   } catch (err) {
     console.warn('Fallback to empty categories');
   }
@@ -61,187 +53,326 @@ export default async function Home() {
       .eq('in_stock', true)
       .order('created_at', { ascending: false })
       .limit(8);
-
-    if (prodData) {
-      featuredProducts = prodData;
-    }
+    if (prodData) featuredProducts = prodData;
   } catch (err) {
     console.warn('Fallback to empty products');
   }
 
-  // Get WhatsApp number
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hi, I want to inquire about custom accessories from SGB Decors')}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hi, I want to inquire about accessories from SGB Decors')}`;
 
   return (
-    <div className="space-y-16 pb-20">
-      {/* 1. HERO SECTION */}
-      <section className="relative min-h-[60vh] md:min-h-[85vh] w-full flex items-center bg-dark text-white overflow-hidden">
+    <div>
+      {/* ═══════════ HERO SECTION ═══════════ */}
+      <section
+        className="relative flex items-center"
+        style={{ minHeight: '78vh' }}
+      >
         {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={heroSettings.image_url || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1600'}
-            alt="SGB Decors Automotive banner"
-            fill
-            priority
-            className="object-cover object-center"
-          />
-          {/* Dark Overlay for readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-dark via-dark/80 to-transparent md:to-black/30" />
-        </div>
+        <Image
+          src={heroSettings.image_url || 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=1600'}
+          alt="Premium auto accessories"
+          fill
+          priority
+          className="object-cover"
+          style={{ objectPosition: 'center right' }}
+        />
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(105deg, rgba(11,15,12,0.97) 0%, rgba(11,15,12,0.88) 40%, rgba(11,15,12,0.45) 70%, rgba(11,15,12,0.2) 100%)' }}
+        />
 
         {/* Content */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10 py-16 md:py-28 w-full">
-          <div className="max-w-2xl space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
-            <span className="inline-flex items-center rounded-md bg-primary/20 border border-primary/40 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-              ⚡ Upgrade Your Ride
+        <div className="relative z-10 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-20 md:py-0">
+          <div className="max-w-xl space-y-6">
+            {/* Badge */}
+            <span
+              style={{
+                display: 'inline-block',
+                background: 'rgba(214,163,19,0.12)',
+                border: '1px solid rgba(214,163,19,0.3)',
+                color: '#D6A313',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 600,
+                fontSize: '11px',
+                letterSpacing: '0.08em',
+                padding: '5px 12px',
+                borderRadius: '6px',
+              }}
+            >
+              PREMIUM AUTO ACCESSORIES
             </span>
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight border-l-4 border-primary pl-4">
+
+            {/* Heading */}
+            <h1
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize: 'clamp(2.4rem, 5vw, 3.6rem)',
+                fontWeight: 700,
+                color: '#F8F3E8',
+                lineHeight: 1.1,
+                letterSpacing: '-0.01em',
+              }}
+            >
               {heroSettings.heading}
             </h1>
-            <p className="text-base sm:text-lg text-white/80 leading-relaxed max-w-lg font-light">
+
+            {/* Subheading */}
+            <p style={{ color: 'rgba(248,243,232,0.65)', fontSize: '15px', lineHeight: 1.7, maxWidth: '440px', fontFamily: 'Inter, sans-serif' }}>
               {heroSettings.subheading}
             </p>
-            <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
                 href="/products"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-primary/95 transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90"
+                style={{
+                  background: '#D6A313',
+                  color: '#101510',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  padding: '14px 28px',
+                  borderRadius: '12px',
+                }}
               >
                 {heroSettings.cta_text}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="h-4 w-4" />
               </Link>
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border border-white bg-transparent px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 transition-all duration-200 hover:bg-white/5"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(248,243,232,0.25)',
+                  color: '#F8F3E8',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  padding: '14px 28px',
+                  borderRadius: '12px',
+                }}
               >
-                WhatsApp Us
+                <MessageCircle className="h-4 w-4" />
+                Order on WhatsApp
               </a>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* 2. TRUST BADGES BAR */}
-      <section className="bg-white border-y border-border py-8 shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-              <Truck className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
-              <div>
-                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">Fast Delivery</h4>
-                <p className="text-xs text-muted">Direct to your doorstep in India</p>
-              </div>
-            </div>
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-              <ShieldCheck className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
-              <div>
-                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">Quality Guaranteed</h4>
-                <p className="text-xs text-muted">100% Genuine Car & Bike Accessories</p>
-              </div>
-            </div>
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-              <MessageCircle className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
-              <div>
-                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">WhatsApp Support</h4>
-                <p className="text-xs text-muted">Talk directly to order experts</p>
-              </div>
-            </div>
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-              <Tag className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
-              <div>
-                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">Best Prices</h4>
-                <p className="text-xs text-muted">Unbeatable value in Indian Market</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. CATEGORIES SECTION */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-xl mx-auto space-y-3">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-dark">Shop by Category</h2>
-          <p className="text-sm text-muted leading-relaxed font-light">
-            Find the perfect upgrades tailored specifically for your cars and bikes.
-          </p>
-        </div>
-
-        <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {categories.length > 0 ? (
-            categories.map((category) => {
-              const imageSrc = category.image_url || defaultCategoryImages[category.slug] || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=400';
-              return (
-                <Link
-                  key={category.id}
-                  href={`/products?category=${category.slug}`}
-                  className="group relative aspect-square rounded-xl overflow-hidden block shadow-sm border border-border/40"
+            {/* Trust chips */}
+            <div className="flex flex-wrap gap-3 pt-4">
+              {['Fast Delivery', 'Genuine Products', 'WhatsApp Support'].map((chip) => (
+                <span
+                  key={chip}
+                  className="inline-flex items-center gap-1.5"
+                  style={{
+                    background: 'rgba(248,243,232,0.06)',
+                    border: '1px solid rgba(248,243,232,0.1)',
+                    color: 'rgba(248,243,232,0.6)',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                  }}
                 >
-                  <Image
-                    src={imageSrc}
-                    alt={category.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {/* Bottom overlay gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-dark/90 via-dark/40 to-transparent flex flex-col justify-end p-5 transition-all duration-200 group-hover:border-b-4 group-hover:border-primary" />
-                  <div className="absolute bottom-5 left-5 text-white z-10">
-                    <h3 className="font-display text-base font-bold tracking-tight">{category.name}</h3>
-                    <span className="inline-flex items-center text-xs text-primary font-bold mt-1 group-hover:underline">
-                      Explore Accessories
-                      <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })
-          ) : (
-            // Skeleton Loader Cards
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-xl bg-white border border-border animate-pulse flex flex-col justify-end p-5">
-                <div className="h-4 w-2/3 bg-border rounded mb-2" />
-                <div className="h-3 w-1/2 bg-border rounded" />
-              </div>
-            ))
-          )}
+                  <CheckCircle className="h-3 w-3" style={{ color: '#D6A313' }} />
+                  {chip}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* 4. FEATURED PRODUCTS */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-row items-end justify-between gap-4 mb-10">
-          <div className="space-y-2">
-            <h2 className="font-display text-3xl font-bold tracking-tight text-dark">Featured Upgrades</h2>
-            <p className="text-sm text-muted font-light">High quality parts selected for performance and aesthetics.</p>
-          </div>
-          <Link
-            href="/products"
-            className="inline-flex items-center text-sm font-bold text-primary hover:underline hover:text-primary/95 shrink-0"
-          >
-            View All Products
-            <ArrowRight className="ml-1.5 h-4 w-4" />
-          </Link>
-        </div>
-
-        {featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+      {/* ═══════════ TRUST STRIP ═══════════ */}
+      <section style={{ background: '#111811', borderTop: '1px solid rgba(214,163,19,0.15)', borderBottom: '1px solid rgba(214,163,19,0.15)', padding: '18px 0' }}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { Icon: Truck, title: 'Fast Delivery' },
+              { Icon: ShieldCheck, title: 'Quality Checked' },
+              { Icon: MessageCircle, title: 'WhatsApp Ordering' },
+              { Icon: Tag, title: 'Best Prices' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 justify-center md:justify-start">
+                <item.Icon className="h-5 w-5 shrink-0" style={{ color: '#D6A313' }} />
+                <span style={{ color: 'rgba(248,243,232,0.75)', fontSize: '13px', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                  {item.title}
+                </span>
+              </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-border/40">
-            <p className="text-sm text-muted mb-4">No products loaded yet. Head over to the admin dashboard to add items!</p>
+        </div>
+      </section>
+
+      {/* ═══════════ CATEGORIES ═══════════ */}
+      <section style={{ background: '#F6F3EC', padding: '80px 0' }} className="max-md:!py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center max-w-lg mx-auto mb-12">
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '2rem', fontWeight: 700, color: '#101510' }}>
+              Shop by Category
+            </h2>
+            <p style={{ color: '#8B938A', fontSize: '14px', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>
+              Find the right upgrade for your car or bike.
+            </p>
+          </div>
+
+          {/* Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+            {categories.length > 0 ? (
+              categories.map((category) => {
+                const imageSrc = category.image_url || defaultCategoryImages[category.slug] || 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=400';
+                return (
+                  <Link
+                    key={category.id}
+                    href={`/products?category=${category.slug}`}
+                    className="group relative block overflow-hidden transition-transform duration-300 hover:-translate-y-1"
+                    style={{ borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}
+                  >
+                    <div className="relative" style={{ height: '220px' }}>
+                      <Image
+                        src={imageSrc}
+                        alt={category.name}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(11,15,12,0.88) 0%, rgba(11,15,12,0.2) 55%, transparent 100%)' }} />
+                      <div className="absolute bottom-4 left-4 z-10">
+                        <h3 style={{ color: '#F8F3E8', fontWeight: 700, fontSize: '15px', fontFamily: 'Inter, sans-serif' }}>
+                          {category.name}
+                        </h3>
+                        <span style={{ color: '#D6A313', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter, sans-serif' }} className="inline-flex items-center gap-1 mt-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                          Explore <ArrowRight className="h-3 w-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              // Fallback skeleton cards
+              ['Bike Accessories', 'Car Styling', 'Car Protection', 'Lighting & Electronics'].map((name, i) => (
+                <div
+                  key={i}
+                  className="relative overflow-hidden flex flex-col justify-end p-4"
+                  style={{ height: '220px', borderRadius: '12px', background: '#e8e5de' }}
+                >
+                  <div className="h-4 w-2/3 rounded" style={{ background: '#d4d1c9' }} />
+                  <div className="h-3 w-1/3 rounded mt-2" style={{ background: '#d4d1c9' }} />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ FEATURED PRODUCTS ═══════════ */}
+      <section style={{ background: '#0B0F0C', padding: '80px 0' }} className="max-md:!py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4 mb-10">
+            <div>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.75rem', fontWeight: 700, color: '#F8F3E8' }}>
+                Featured Upgrades
+              </h2>
+              <p style={{ color: '#9AA397', fontSize: '13px', marginTop: '6px', fontFamily: 'Inter, sans-serif' }}>
+                Top-selling accessories picked for quality and value.
+              </p>
+            </div>
             <Link
-              href="/admin"
-              className="inline-flex items-center justify-center rounded-lg bg-dark px-6 py-2.5 text-xs font-semibold text-white hover:bg-dark/90"
+              href="/products"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 hover:gap-2.5 shrink-0"
+              style={{ color: '#D6A313', fontFamily: 'Inter, sans-serif' }}
             >
-              Go to Admin Panel
+              View All Products <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-        )}
+
+          {/* Product Grid */}
+          {featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16" style={{ background: '#111811', borderRadius: '12px', border: '1px solid rgba(214,163,19,0.18)' }}>
+              <p style={{ color: '#9AA397', fontSize: '14px', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
+                No products loaded yet. Add items from the admin dashboard.
+              </p>
+              <Link
+                href="/admin"
+                className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-semibold"
+                style={{ background: '#D6A313', color: '#101510', borderRadius: '12px', fontFamily: 'Inter, sans-serif' }}
+              >
+                Go to Admin Panel
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile View All */}
+          <div className="sm:hidden text-center mt-8">
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1.5 text-sm font-bold px-6 py-3"
+              style={{ color: '#101510', background: '#D6A313', borderRadius: '12px', fontFamily: 'Inter, sans-serif' }}
+            >
+              View All Products <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ WHATSAPP CTA SECTION ═══════════ */}
+      <section
+        className="relative overflow-hidden"
+        style={{ background: '#0B0F0C' }}
+      >
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=30&w=1200)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(11,15,12,0.95), rgba(17,24,17,0.92))' }} />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 md:py-20 text-center">
+          <div className="max-w-xl mx-auto space-y-5">
+            <Zap className="h-8 w-8 mx-auto" style={{ color: '#D6A313' }} />
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, color: '#F8F3E8' }}>
+              Need help choosing the right accessory?
+            </h2>
+            <p style={{ color: 'rgba(248,243,232,0.6)', fontSize: '14px', lineHeight: 1.7, fontFamily: 'Inter, sans-serif' }}>
+              Message us on WhatsApp and we&apos;ll suggest the best fit for your car or bike.
+            </p>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 transition-all duration-200 hover:opacity-90"
+              style={{
+                background: '#25D366',
+                color: '#FFFFFF',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 700,
+                fontSize: '14px',
+                padding: '14px 32px',
+                borderRadius: '12px',
+              }}
+            >
+              <MessageCircle className="h-5 w-5" />
+              Chat on WhatsApp
+            </a>
+          </div>
+        </div>
       </section>
     </div>
   );

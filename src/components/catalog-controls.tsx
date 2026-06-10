@@ -28,18 +28,19 @@ export default function CatalogControls({
   };
 
   return (
-    <div className="flex items-center space-x-3 justify-between sm:justify-end">
-      {/* Mobile Filter indicator */}
-      <div className="lg:hidden flex items-center space-x-2">
-        <SlidersHorizontal className="h-4 w-4 text-muted" />
+    <div className="flex items-center gap-3 justify-between sm:justify-end">
+      {/* Mobile Category Filter */}
+      <div className="lg:hidden flex items-center gap-2">
+        <SlidersHorizontal className="h-4 w-4 shrink-0" style={{ color: '#9AA397' }} />
         <select
           value={activeCategory}
           onChange={(e) => handleCategoryChange(e.target.value)}
-          className="bg-transparent border-none text-sm font-medium focus:outline-none text-text cursor-pointer"
+          className="border-none text-sm font-medium focus:outline-none cursor-pointer"
+          style={{ background: 'transparent', color: '#F8F3E8', fontFamily: 'Inter, sans-serif' }}
         >
-          <option value="all">All Categories</option>
+          <option value="all" style={{ background: '#111811', color: '#F8F3E8' }}>All Categories</option>
           {categories.map((c) => (
-            <option key={c.id} value={c.slug}>
+            <option key={c.id} value={c.slug} style={{ background: '#111811', color: '#F8F3E8' }}>
               {c.name}
             </option>
           ))}
@@ -47,16 +48,17 @@ export default function CatalogControls({
       </div>
 
       {/* Sort Selector */}
-      <div className="flex items-center space-x-2 border-l border-border/40 pl-3 lg:border-none lg:pl-0">
-        <ArrowUpDown className="h-4 w-4 text-muted" />
+      <div className="flex items-center gap-2">
+        <ArrowUpDown className="h-4 w-4 shrink-0" style={{ color: '#9AA397' }} />
         <select
           value={sortBy}
           onChange={(e) => handleSortChange(e.target.value)}
-          className="bg-transparent border-none text-sm font-medium focus:outline-none text-primary cursor-pointer"
+          className="border-none text-sm font-medium focus:outline-none cursor-pointer"
+          style={{ background: 'transparent', color: '#D6A313', fontFamily: 'Inter, sans-serif' }}
         >
-          <option value="latest">Latest Summary</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
+          <option value="latest" style={{ background: '#111811', color: '#F8F3E8' }}>Latest</option>
+          <option value="price-asc" style={{ background: '#111811', color: '#F8F3E8' }}>Price: Low to High</option>
+          <option value="price-desc" style={{ background: '#111811', color: '#F8F3E8' }}>Price: High to Low</option>
         </select>
       </div>
     </div>
