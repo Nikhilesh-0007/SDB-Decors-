@@ -3,25 +3,27 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface CartItem {
-  id: string;
+  product_id: string;
   name: string;
   price: number;
-  quantity: number;
   image: string;
+  qty: number;
   slug: string;
 }
 
 export interface Coupon {
+  id?: string;
   code: string;
-  discount_type: 'percentage' | 'fixed';
+  discount_type: 'percent' | 'flat';
   discount_value: number;
+  is_active?: boolean;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Omit<CartItem, 'quantity'>, quantity?: number) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addToCart: (product: Omit<CartItem, 'qty'>, qty?: number) => void;
+  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, qty: number) => void;
   clearCart: () => void;
   coupon: Coupon | null;
   applyCoupon: (coupon: Coupon) => void;
@@ -39,7 +41,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load cart and coupon from localStorage on mount
+  // Load from localStorage on mount
   useEffect(() => {
     try {
       const storedCart = localStorage.getItem('sgb_cart');
@@ -56,7 +58,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsLoaded(true);
   }, []);
 
-  // Save cart and coupon to localStorage when state changes
+  // Save cart to localStorage
   useEffect(() => {
     if (isLoaded) {
       try {
@@ -67,6 +69,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cartItems, isLoaded]);
 
+  // Save coupon to localStorage
   useEffect(() => {
     if (isLoaded) {
       try {
@@ -81,31 +84,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [coupon, isLoaded]);
 
-  const addToCart = (product: Omit<CartItem, 'quantity'>, quantity = 1) => {
+  const addToCart = (product: Omit<CartItem, 'qty'>, qty = 1) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id);
+      const existingItem = prevItems.find((item) => item.product_id === product.product_id);
       if (existingItem) {
         return prevItems.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+          item.product_id === product.product_id
+            ? { ...item, qty: item.qty + qty }
             : item
         );
       }
-      return [...prevItems, { ...product, quantity }];
+      return [...prevItems, { ...product, qty }];
     });
   };
 
-  const removeFromCart = (id: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  const removeFromCart = (productId: string) => {
+    setCartItems((prevItems) => prevItems.filter((item) => item.product_id !== productId));
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(id);
+  const updateQuantity = (productId: string, qty: number) => {
+    if (qty <= 0) {
+      removeFromCart(productId);
       return;
     }
     setCartItems((prevItems) =>
-      prevItems.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prevItems.map((item) => (item.product_id === productId ? { ...item, qty } : item))
     );
   };
 
@@ -125,21 +128,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Calculations
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   let discountAmount = 0;
   if (coupon) {
-    if (coupon.discount_type === 'percentage') {
+    if (coupon.discount_type === 'percent') {
       discountAmount = (subtotal * coupon.discount_value) / 100;
     } else {
       discountAmount = coupon.discount_value;
     }
   }
 
-  // Cap discount amount to subtotal
+  // Cap discount to subtotal
   discountAmount = Math.min(discountAmount, subtotal);
   const total = Math.max(0, subtotal - discountAmount);
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
 
   return (
     <CartContext.Provider

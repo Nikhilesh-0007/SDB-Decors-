@@ -31,11 +31,11 @@ export default function CatalogControls({
     <div className="flex items-center space-x-3 justify-between sm:justify-end">
       {/* Mobile Filter indicator */}
       <div className="lg:hidden flex items-center space-x-2">
-        <SlidersHorizontal className="h-4 w-4 text-foreground/70" />
+        <SlidersHorizontal className="h-4 w-4 text-muted" />
         <select
           value={activeCategory}
           onChange={(e) => handleCategoryChange(e.target.value)}
-          className="bg-transparent border-none text-sm font-medium focus:outline-none text-foreground/75 cursor-pointer"
+          className="bg-transparent border-none text-sm font-medium focus:outline-none text-text cursor-pointer"
         >
           <option value="all">All Categories</option>
           {categories.map((c) => (
@@ -48,7 +48,7 @@ export default function CatalogControls({
 
       {/* Sort Selector */}
       <div className="flex items-center space-x-2 border-l border-border/40 pl-3 lg:border-none lg:pl-0">
-        <ArrowUpDown className="h-4 w-4 text-foreground/70" />
+        <ArrowUpDown className="h-4 w-4 text-muted" />
         <select
           value={sortBy}
           onChange={(e) => handleSortChange(e.target.value)}

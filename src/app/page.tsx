@@ -1,110 +1,158 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, MessageSquare, Phone, Mail, Award, RotateCcw, ShieldCheck } from 'lucide-react';
-import { getHeroSettings, getCategories, getProducts } from '@/lib/actions';
+import { ArrowRight, Truck, ShieldCheck, MessageCircle, Tag } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/product-card';
 
-// Custom imagery for categories if not defined in db
-const categoryImages: Record<string, string> = {
-  furniture: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=600',
-  lighting: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&q=80&w=600',
-  'wall-decor': 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=600',
-  accessories: 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&q=80&w=600',
+// Custom high-quality automotive category icons if images are not set in the database
+const defaultCategoryImages: Record<string, string> = {
+  'car-styling': 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=600',
+  'bike-accessories': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600',
+  'car-protection': 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600',
+  'led-lighting': 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=600',
 };
 
-export const revalidate = 3600; // Revalidate every hour
+export const revalidate = 0; // Disable caching to fetch live hero settings and catalog directly
 
 export default async function Home() {
-  const heroSettings = await getHeroSettings();
-  const categories = await getCategories();
-  const featuredProducts = await getProducts({ featuredOnly: true });
+  let heroSettings = {
+    heading: 'Premium Car & Bike Accessories',
+    subheading: 'Upgrade your ride with high-performance styling, premium lighting, and durable protective gear.',
+    image_url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1600',
+    cta_text: 'Shop Now',
+  };
+
+  let categories: any[] = [];
+  let featuredProducts: any[] = [];
+
+  // Direct server-side Supabase fetches with try-catch fallback
+  try {
+    const { data: heroData } = await supabase
+      .from('hero_settings')
+      .select('heading, subheading, image_url, cta_text')
+      .eq('id', 1)
+      .single();
+
+    if (heroData) {
+      heroSettings = heroData;
+    }
+  } catch (err) {
+    console.warn('Fallback to default hero settings');
+  }
+
+  try {
+    const { data: catData } = await supabase
+      .from('categories')
+      .select('id, name, slug, image_url')
+      .order('name', { ascending: true });
+
+    if (catData) {
+      categories = catData;
+    }
+  } catch (err) {
+    console.warn('Fallback to empty categories');
+  }
+
+  try {
+    const { data: prodData } = await supabase
+      .from('products')
+      .select('*, categories(name, slug)')
+      .eq('in_stock', true)
+      .order('created_at', { ascending: false })
+      .limit(8);
+
+    if (prodData) {
+      featuredProducts = prodData;
+    }
+  } catch (err) {
+    console.warn('Fallback to empty products');
+  }
+
+  // Get WhatsApp number
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hi, I want to inquire about custom accessories from SGB Decors')}`;
 
   return (
-    <div className="space-y-20 pb-20">
+    <div className="space-y-16 pb-20">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden pt-12 md:pt-20 lg:pt-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <span className="inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-accent">
-                New Autumn Catalog
-              </span>
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-primary leading-[1.1]">
-                {heroSettings.title}
-              </h1>
-              <p className="text-base sm:text-lg text-foreground/70 leading-relaxed max-w-lg font-light">
-                {heroSettings.subtitle}
-              </p>
-              <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <Link
-                  href="/products"
-                  className="inline-flex items-center justify-center rounded-xl bg-primary px-8 py-4 text-sm font-semibold text-white shadow-sm hover:bg-accent hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  {heroSettings.button_text}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-                <Link
-                  href="#contact"
-                  className="inline-flex items-center justify-center rounded-xl border border-primary/20 bg-transparent px-8 py-4 text-sm font-semibold text-primary hover:bg-secondary/40 transition-colors"
-                >
-                  Consult Designer
-                </Link>
-              </div>
-            </div>
+      <section className="relative min-h-[60vh] md:min-h-[85vh] w-full flex items-center bg-dark text-white overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={heroSettings.image_url || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1600'}
+            alt="SGB Decors Automotive banner"
+            fill
+            priority
+            className="object-cover object-center"
+          />
+          {/* Dark Overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-dark via-dark/80 to-transparent md:to-black/30" />
+        </div>
 
-            {/* Right Image Frame */}
-            <div className="lg:col-span-7 relative h-[350px] sm:h-[480px] lg:h-[550px] w-full rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src={heroSettings.image_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=1200'}
-                alt="Premium Home Design"
-                fill
-                priority
-                className="object-cover object-center"
-              />
-              {/* Glass announcement element */}
-              <div className="absolute bottom-6 left-6 right-6 glass-panel rounded-xl p-4 sm:p-6 shadow-lg flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-accent mb-0.5">Special Offer</p>
-                  <h4 className="text-sm sm:text-base font-semibold text-primary">Get 10% Off on checkout</h4>
-                  <p className="text-[11px] sm:text-xs text-foreground/60">Apply code <span className="font-bold text-accent">WELCOME10</span> at checkout.</p>
-                </div>
-                <Link
-                  href="/products"
-                  className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white hover:bg-accent transition-colors"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
+        {/* Content */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10 py-16 md:py-28 w-full">
+          <div className="max-w-2xl space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
+            <span className="inline-flex items-center rounded-md bg-primary/20 border border-primary/40 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              ⚡ Upgrade Your Ride
+            </span>
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight border-l-4 border-primary pl-4">
+              {heroSettings.heading}
+            </h1>
+            <p className="text-base sm:text-lg text-white/80 leading-relaxed max-w-lg font-light">
+              {heroSettings.subheading}
+            </p>
+            <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <Link
+                href="/products"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-primary/95 transition-all duration-200"
+              >
+                {heroSettings.cta_text}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border border-white bg-transparent px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-200"
+              >
+                WhatsApp Us
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. VALUE PROPOSITIONS */}
-      <section className="bg-secondary/20 py-12 border-y border-border/30">
+      {/* 2. TRUST BADGES BAR */}
+      <section className="bg-white border-y border-border py-8 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            <div className="flex items-start space-x-4">
-              <Award className="h-8 w-8 text-accent shrink-0 stroke-[1.2]" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+              <Truck className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
               <div>
-                <h4 className="text-base font-semibold text-primary">Bespoke Artistry</h4>
-                <p className="text-xs text-foreground/60 mt-1 leading-relaxed">Every piece is handpicked and crafted by master designers.</p>
+                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">Fast Delivery</h4>
+                <p className="text-xs text-muted">Direct to your doorstep in India</p>
               </div>
             </div>
-            <div className="flex items-start space-x-4">
-              <ShieldCheck className="h-8 w-8 text-accent shrink-0 stroke-[1.2]" />
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+              <ShieldCheck className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
               <div>
-                <h4 className="text-base font-semibold text-primary">Guaranteed Quality</h4>
-                <p className="text-xs text-foreground/60 mt-1 leading-relaxed">Premium organic materials sourced for lifelong durability.</p>
+                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">Quality Guaranteed</h4>
+                <p className="text-xs text-muted">100% Genuine Car & Bike Accessories</p>
               </div>
             </div>
-            <div className="flex items-start space-x-4">
-              <RotateCcw className="h-8 w-8 text-accent shrink-0 stroke-[1.2]" />
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+              <MessageCircle className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
               <div>
-                <h4 className="text-base font-semibold text-primary">WhatsApp Ordering</h4>
-                <p className="text-xs text-foreground/60 mt-1 leading-relaxed">Direct support. Chat with our representatives to finalize sizing.</p>
+                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">WhatsApp Support</h4>
+                <p className="text-xs text-muted">Talk directly to order experts</p>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+              <Tag className="h-8 w-8 text-primary shrink-0 stroke-[1.5]" />
+              <div>
+                <h4 className="text-sm font-bold text-dark uppercase tracking-wide">Best Prices</h4>
+                <p className="text-xs text-muted">Unbeatable value in Indian Market</p>
               </div>
             </div>
           </div>
@@ -114,160 +162,86 @@ export default async function Home() {
       {/* 3. CATEGORIES SECTION */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-xl mx-auto space-y-3">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-primary">Shop by Collection</h2>
-          <p className="text-sm text-foreground/60 leading-relaxed font-light">
-            Explore our curated collections, designed to bring harmony and sophistication to your interior spaces.
+          <h2 className="font-display text-3xl font-bold tracking-tight text-dark">Shop by Category</h2>
+          <p className="text-sm text-muted leading-relaxed font-light">
+            Find the perfect upgrades tailored specifically for your cars and bikes.
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((category) => {
-            const imageSrc = categoryImages[category.slug] || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=400';
-            return (
-              <Link
-                key={category.id}
-                href={`/products?category=${category.slug}`}
-                className="group relative h-80 rounded-2xl overflow-hidden block shadow-sm hover:shadow-lg transition-shadow duration-300"
-              >
-                <Image
-                  src={imageSrc}
-                  alt={category.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 25vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6" />
-                <div className="absolute bottom-6 left-6 text-white space-y-1">
-                  <h3 className="font-display text-xl font-bold tracking-tight">{category.name}</h3>
-                  <span className="inline-flex items-center text-xs text-accent font-semibold group-hover:underline">
-                    Browse Collection
-                    <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+        <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {categories.length > 0 ? (
+            categories.map((category) => {
+              const imageSrc = category.image_url || defaultCategoryImages[category.slug] || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=400';
+              return (
+                <Link
+                  key={category.id}
+                  href={`/products?category=${category.slug}`}
+                  className="group relative aspect-square rounded-xl overflow-hidden block shadow-sm border border-border/40"
+                >
+                  <Image
+                    src={imageSrc}
+                    alt={category.name}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {/* Bottom overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-dark/90 via-dark/40 to-transparent flex flex-col justify-end p-5 transition-all duration-200 group-hover:border-b-4 group-hover:border-primary" />
+                  <div className="absolute bottom-5 left-5 text-white z-10">
+                    <h3 className="font-display text-base font-bold tracking-tight">{category.name}</h3>
+                    <span className="inline-flex items-center text-xs text-primary font-bold mt-1 group-hover:underline">
+                      Explore Accessories
+                      <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            // Skeleton Loader Cards
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded-xl bg-white border border-border animate-pulse flex flex-col justify-end p-5">
+                <div className="h-4 w-2/3 bg-border rounded mb-2" />
+                <div className="h-3 w-1/2 bg-border rounded" />
+              </div>
+            ))
+          )}
         </div>
       </section>
 
       {/* 4. FEATURED PRODUCTS */}
-      {featuredProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12">
-            <div className="space-y-2">
-              <h2 className="font-display text-3xl font-bold tracking-tight text-primary">Featured Pieces</h2>
-              <p className="text-sm text-foreground/60 font-light">Our most sought-after custom furniture and decors.</p>
-            </div>
-            <Link
-              href="/products"
-              className="inline-flex items-center text-sm font-semibold text-accent hover:underline"
-            >
-              View All Products
-              <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Link>
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-row items-end justify-between gap-4 mb-10">
+          <div className="space-y-2">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-dark">Featured Upgrades</h2>
+            <p className="text-sm text-muted font-light">High quality parts selected for performance and aesthetics.</p>
           </div>
+          <Link
+            href="/products"
+            className="inline-flex items-center text-sm font-bold text-primary hover:underline hover:text-primary/95 shrink-0"
+          >
+            View All Products
+            <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Link>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProducts.slice(0, 4).map((product) => (
+        {featuredProducts.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-        </section>
-      )}
-
-      {/* 5. TESTIMONIALS */}
-      <section className="bg-primary py-20 text-white overflow-hidden relative">
-        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent via-background to-black" />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-lg mx-auto mb-16 space-y-3">
-            <h2 className="font-display text-3xl font-bold tracking-tight">What Designers Say</h2>
-            <p className="text-sm text-white/60 font-light">Trusted by architectural firms and decor enthusiasts globally.</p>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-border/40">
+            <p className="text-sm text-muted mb-4">No products loaded yet. Head over to the admin dashboard to add items!</p>
+            <Link
+              href="/admin"
+              className="inline-flex items-center justify-center rounded-lg bg-dark px-6 py-2.5 text-xs font-semibold text-white hover:bg-dark/90"
+            >
+              Go to Admin Panel
+            </Link>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                quote: "SGBdecors has completely transformed how I source pieces for clients. The craftsmanship of the Velvet Sofa is exceptional, and checkouts are extremely fast.",
-                author: "Sarah Jenkins",
-                role: "Lead Interior Architect, NY",
-              },
-              {
-                quote: "The travertine bookends and minimalist oak table added the perfect organic elements to our latest penthouse design project. Highly recommended catalog!",
-                author: "David Vance",
-                role: "Design Curator, Studio Vance",
-              },
-              {
-                quote: "WhatsApp chat ordering was incredibly convenient. I requested customized fabric details and received answers within 10 minutes. A premium experience.",
-                author: "Helena Rostova",
-                role: "Stylist & Decorator",
-              },
-            ].map((t, index) => (
-              <div
-                key={index}
-                className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm flex flex-col justify-between"
-              >
-                <p className="text-sm text-white/80 leading-relaxed italic font-light">&ldquo;{t.quote}&rdquo;</p>
-                <div className="mt-6">
-                  <h4 className="font-semibold text-sm text-accent">{t.author}</h4>
-                  <p className="text-xs text-white/40 mt-0.5">{t.role}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. CONTACT SECTION */}
-      <section id="contact" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="bg-card rounded-3xl border border-border/40 p-8 md:p-12 shadow-sm overflow-hidden relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left */}
-            <div className="space-y-6">
-              <h2 className="font-display text-3xl font-bold text-primary tracking-tight">Need Custom Consultation?</h2>
-              <p className="text-sm text-foreground/60 leading-relaxed font-light">
-                Do you need custom fabric, custom dimensions, or want to discuss details of a wholesale order? Connect with our interior design desk directly via WhatsApp.
-              </p>
-              <div className="space-y-4 pt-4 text-sm text-foreground/80">
-                <div className="flex items-center space-x-3">
-                  <Phone className="h-5 w-5 text-accent stroke-[1.5]" />
-                  <span>+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-5 w-5 text-accent stroke-[1.5]" />
-                  <span>consultation@sgbdecors.com</span>
-                </div>
-              </div>
-              <div className="pt-2">
-                <a
-                  href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_PHONE}?text=Hello SGBdecors, I would like to schedule a custom decor consultation.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-primary transition-colors"
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Chat with Design Desk
-                </a>
-              </div>
-            </div>
-
-            {/* Right (Visual Map/Showroom mockup) */}
-            <div className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden shadow-inner bg-muted">
-              <Image
-                src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80&w=800"
-                alt="SGBdecors Showroom"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
-                <div className="text-center text-white space-y-1 p-6">
-                  <h4 className="font-display text-lg font-bold">New York Showroom</h4>
-                  <p className="text-xs text-white/80 font-light">Open Monday - Saturday: 10AM - 7PM</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </section>
     </div>
   );

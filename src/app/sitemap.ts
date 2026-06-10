@@ -1,14 +1,23 @@
 import { MetadataRoute } from 'next';
-import { getProducts, getCategories } from '@/lib/actions';
+import { supabase } from '@/lib/supabase';
 
 export const revalidate = 3600; // Regenerate sitemap once per hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sgbdecors.com';
 
-  // Fetch all product slugs and categories
-  const products = await getProducts();
-  const categories = await getCategories();
+  let products: any[] = [];
+  let categories: any[] = [];
+
+  try {
+    const { data: prodData } = await supabase.from('products').select('slug, created_at');
+    if (prodData) products = prodData;
+
+    const { data: catData } = await supabase.from('categories').select('slug');
+    if (catData) categories = catData;
+  } catch (err) {
+    console.error('Sitemap query error:', err);
+  }
 
   // Static routes
   const staticRoutes = [

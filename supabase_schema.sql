@@ -1,7 +1,7 @@
--- SGBdecors Supabase Database Schema
+-- SGB Decors Supabase Database Schema Reset
 -- Run this in your Supabase Project SQL Editor to set up the database.
 
--- Drop existing tables if they exist to start fresh
+-- Drop existing tables to start fresh
 drop table if exists public.orders cascade;
 drop table if exists public.products cascade;
 drop table if exists public.categories cascade;
@@ -20,7 +20,9 @@ create extension if not exists "uuid-ossp";
 create table public.categories (
     id uuid default gen_random_uuid() primary key,
     name text not null,
-    slug text not null unique
+    slug text not null unique,
+    image_url text,
+    created_at timestamp with time zone default now() not null
 );
 
 -- Products Table
@@ -32,44 +34,41 @@ create table public.products (
     price numeric not null check (price >= 0),
     images text[] default '{}'::text[],
     category_id uuid references public.categories(id) on delete set null,
-    stock integer default 0 check (stock >= 0),
-    is_featured boolean default false,
-    is_out_of_stock boolean default false,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+    in_stock boolean default true not null,
+    created_at timestamp with time zone default now() not null
 );
 
 -- Coupons Table
 create table public.coupons (
     id uuid default gen_random_uuid() primary key,
     code text not null unique,
-    discount_type text not null check (discount_type in ('percentage', 'fixed')),
+    discount_type text not null check (discount_type in ('percent', 'flat')),
     discount_value numeric not null check (discount_value > 0),
-    expiry_date timestamp with time zone not null,
-    active boolean default true not null
+    is_active boolean default true not null,
+    created_at timestamp with time zone default now() not null
 );
 
 -- Orders Table
 create table public.orders (
     id uuid default gen_random_uuid() primary key,
     customer_name text not null,
-    phone text not null,
-    email text not null,
-    address text,
-    notes text,
-    products_json jsonb not null, -- Stores array of { id, name, price, quantity, image }
+    customer_phone text not null,
+    customer_email text not null,
+    items jsonb not null, -- Stores array of { product_id, name, qty, price }
     coupon_code text,
     total_amount numeric not null check (total_amount >= 0),
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+    whatsapp_sent boolean default true not null,
+    created_at timestamp with time zone default now() not null
 );
 
 -- Hero Settings Table (Single-row configuration)
 create table public.hero_settings (
     id integer primary key default 1 check (id = 1),
-    title text default 'Curated Decor For Modern Living' not null,
-    subtitle text default 'Discover our premium handcrafted collection of home decor and furniture.' not null,
+    heading text default 'Premium Car & Bike Accessories' not null,
+    subheading text default 'Upgrade your ride with high-performance styling, premium lighting, and durable protective gear.' not null,
     image_url text,
-    button_text text default 'Explore Catalog' not null,
-    banner_url text
+    cta_text text default 'Shop Now' not null,
+    updated_at timestamp with time zone default now() not null
 );
 
 -- Admin Users Table (Custom credentials)
@@ -95,139 +94,124 @@ alter table public.admin_users enable row level security;
 create policy "Allow public read access to categories" on public.categories
     for select using (true);
 
-create policy "Allow admin write access to categories" on public.categories
-    for all to authenticated using (true) with check (true);
+create policy "Allow public read/write to categories" on public.categories
+    for all using (true) with check (true);
 
 -- Products Policies
 create policy "Allow public read access to products" on public.products
     for select using (true);
 
-create policy "Allow admin write access to products" on public.products
-    for all to authenticated using (true) with check (true);
+create policy "Allow public read/write to products" on public.products
+    for all using (true) with check (true);
 
 -- Coupons Policies
 create policy "Allow public read access to active coupons" on public.coupons
-    for select using (active = true);
+    for select using (is_active = true);
 
-create policy "Allow admin write access to coupons" on public.coupons
-    for all to authenticated using (true) with check (true);
+create policy "Allow public read/write to coupons" on public.coupons
+    for all using (true) with check (true);
 
 -- Orders Policies
 create policy "Allow public insert access to orders" on public.orders
     for insert with check (true);
 
-create policy "Allow admin read/write access to orders" on public.orders
-    for all to authenticated using (true) with check (true);
+create policy "Allow public read/write to orders" on public.orders
+    for all using (true) with check (true);
 
 -- Hero Settings Policies
 create policy "Allow public read access to hero_settings" on public.hero_settings
     for select using (true);
 
-create policy "Allow admin write access to hero_settings" on public.hero_settings
-    for all to authenticated using (true) with check (true);
+create policy "Allow public read/write to hero_settings" on public.hero_settings
+    for all using (true) with check (true);
 
 -- =========================================================================
 -- 3. Seed Data
 -- =========================================================================
 
 -- Seed Categories
-insert into public.categories (name, slug) values
-('Furniture', 'furniture'),
-('Lighting', 'lighting'),
-('Wall Decor', 'wall-decor'),
-('Accessories', 'accessories');
+insert into public.categories (name, slug, image_url) values
+('Car Styling', 'car-styling', 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=400'),
+('Bike Accessories', 'bike-accessories', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=400'),
+('Car Protection', 'car-protection', 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=400'),
+('LED Lighting', 'led-lighting', 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=400');
 
 -- Seed Hero Settings (Default Row)
-insert into public.hero_settings (id, title, subtitle, button_text, image_url, banner_url) values
-(1, 'Curated Decor For Modern Living', 'Discover our premium handcrafted collection of home decor and furniture designed for elegant spaces.', 'Explore Catalog', 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=1600', 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80&w=1600');
+insert into public.hero_settings (id, heading, subheading, image_url, cta_text) values
+(1, 'Premium Car & Bike Accessories', 'Upgrade your ride with high-performance styling, premium lighting, and durable protective gear.', 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1600', 'Shop Now');
 
 -- Seed Coupons
-insert into public.coupons (code, discount_type, discount_value, expiry_date, active) values
-('WELCOME10', 'percentage', 10, '2030-01-01 00:00:00+00', true),
-('DECOR50', 'fixed', 50, '2030-01-01 00:00:00+00', true);
+insert into public.coupons (code, discount_type, discount_value, is_active) values
+('WELCOME10', 'percent', 10, true),
+('RIDE500', 'flat', 500, true);
 
 -- Seed Products
--- Note: Replace category_ids with actual UUIDs generated, or let's use the categories created above.
--- For standard seeding, since the UUIDs are generated, we can do it dynamically or let the admin add them.
--- But we can seed some sample products using a query that finds the category.
 do $$
 declare
-    furniture_id uuid;
+    styling_id uuid;
+    bike_id uuid;
+    protection_id uuid;
     lighting_id uuid;
-    wall_decor_id uuid;
-    accessories_id uuid;
 begin
-    select id into furniture_id from public.categories where slug = 'furniture';
-    select id into lighting_id from public.categories where slug = 'lighting';
-    select id into wall_decor_id from public.categories where slug = 'wall-decor';
-    select id into accessories_id from public.categories where slug = 'accessories';
+    select id into styling_id from public.categories where slug = 'car-styling';
+    select id into bike_id from public.categories where slug = 'bike-accessories';
+    select id into protection_id from public.categories where slug = 'car-protection';
+    select id into lighting_id from public.categories where slug = 'led-lighting';
 
-    insert into public.products (name, slug, description, price, stock, is_featured, is_out_of_stock, category_id, images) values
+    insert into public.products (name, slug, description, price, in_stock, category_id, images) values
     (
-        'Sven Velvet Sofa', 
-        'sven-velvet-sofa', 
-        'A luxurious velvet sofa in deep emerald green, featuring solid wood legs and high-density foam padding for exceptional comfort and mid-century elegance.', 
-        999.00, 
-        5, 
+        'Leatherette Steering Wheel Cover', 
+        'leatherette-steering-wheel-cover', 
+        'Anti-slip, breathable micro-fiber steering wheel wrap providing an elegant grip and long lasting protection for all standard size steering wheels.', 
+        899.00, 
         true, 
-        false, 
-        furniture_id, 
-        array['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1484101403633-562f891dc89a?auto=format&fit=crop&q=80&w=800']
+        styling_id, 
+        array['https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=600']
     ),
     (
-        'Minimalist Oak Coffee Table', 
-        'minimalist-oak-coffee-table', 
-        'Crafted from solid white oak, this coffee table blends Japanese minimalism with Scandinavian functionality, featuring clean lines and a lower shelf for storage.', 
-        450.00, 
-        8, 
+        'Dual-Port USB Car Fast Charger', 
+        'dual-port-usb-car-fast-charger', 
+        'Quick charge 3.0 metal car charger adapter, featuring intelligent voltage display and dual USB ports for simultaneously upgrading mobile battery on the move.', 
+        499.00, 
         true, 
-        false, 
-        furniture_id, 
-        array['https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=800']
+        styling_id, 
+        array['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600']
     ),
     (
-        'Brass Arch Floor Lamp', 
-        'brass-arch-floor-lamp', 
-        'An elegant brass arch floor lamp with a heavy white marble base. The perfect reading companion that adds structural beauty to any modern living room.', 
-        189.00, 
-        12, 
+        'Heavy Duty Bike Body Cover', 
+        'heavy-duty-bike-body-cover', 
+        'All-weather UV protected, water-resistant scratch-proof motorcycle body cover with soft lining and security buckle straps to keep two wheelers safe.', 
+        750.00, 
         true, 
-        false, 
+        bike_id, 
+        array['https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600']
+    ),
+    (
+        'LED H4 High Beam Headlight Bulb', 
+        'led-h4-high-beam-headlight-bulb', 
+        'Ultra-bright white light 6000K LED bulb set, designed with heat-sink fans providing superior night-time visibility and clear road cutoff lines.', 
+        2499.00, 
+        true, 
         lighting_id, 
-        array['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800']
+        array['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=600']
     ),
     (
-        'Ribbed Ceramic Vase Set', 
-        'ribbed-ceramic-vase-set', 
-        'Set of three ceramic vases with unique ribbed textures in organic sand and cream hues. Ideal for displaying dried pampas grass or fresh seasonal blooms.', 
-        75.00, 
-        20, 
+        'Anti-Scratch Clear Door Guard Protectors', 
+        'anti-scratch-clear-door-guard-protectors', 
+        'Flexible transparent door edge guards to prevent scuffs, paint chips, and dings when opening doors in tight parking spots.', 
+        350.00, 
         false, 
-        false, 
-        accessories_id, 
-        array['https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&q=80&w=800']
+        protection_id, 
+        array['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600']
     ),
     (
-        'Abstract Lines Wall Art', 
-        'abstract-lines-wall-art', 
-        'A set of two framed abstract canvas prints, featuring minimalist black ink lines on textured beige backgrounds. Complete with premium oak frames.', 
-        120.00, 
-        0, 
-        false, 
+        'Universal Mobile Phone Mount Holder', 
+        'universal-mobile-phone-mount-holder', 
+        'Strong grip handlebar mount with 360 rotation, designed with shockproof corner pads to keep phones fully locked in during motorcycle journeys.', 
+        599.00, 
         true, 
-        wall_decor_id, 
-        array['https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=800']
-    ),
-    (
-        'Travertine Bookends', 
-        'travertine-bookends', 
-        'Carved from premium natural travertine stone, these sculptural bookends showcase the raw beauty of natural stone texture and hold your favorite volumes in style.', 
-        95.00, 
-        15, 
-        true, 
-        false, 
-        accessories_id, 
-        array['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=800']
+        bike_id, 
+        array['https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600']
     );
 end $$;
 
