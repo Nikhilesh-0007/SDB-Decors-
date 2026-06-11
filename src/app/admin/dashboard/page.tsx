@@ -437,7 +437,7 @@ export default function AdminDashboard() {
       {/* =========================================================================
           MAIN CONTENT VIEW AREA
          ========================================================================= */}
-      <main className="flex-1 p-6 md:p-10 max-w-7xl">
+      <main className="flex-1 p-4 sm:p-6 md:p-10 max-w-7xl min-w-0 w-full">
         {loading ? (
           <div className="h-[60vh] flex items-center justify-center">
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
@@ -469,14 +469,14 @@ export default function AdminDashboard() {
                 )}
 
                 {/* Stat Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {[
                     { label: 'Total Products', value: stats.products, color: 'border-l-primary' },
                     { label: 'Total Categories', value: stats.categories, color: 'border-l-dark' },
                     { label: 'Active Coupons', value: stats.coupons, color: 'border-l-accent' },
                     { label: 'Total Orders', value: stats.orders, color: 'border-l-emerald-600' }
                   ].map((stat, i) => (
-                    <div key={i} className={`bg-white rounded-xl border border-border/60 p-5 shadow-sm border-l-4 ${stat.color}`}>
+                    <div key={i} className={`bg-white rounded-xl border border-border/60 p-4 sm:p-5 shadow-sm border-l-4 ${stat.color}`}>
                       <span className="text-xs font-semibold text-muted uppercase tracking-wider block">{stat.label}</span>
                       <span className="text-2xl font-bold text-dark font-display mt-1 block">{stat.value}</span>
                     </div>
@@ -524,8 +524,8 @@ export default function AdminDashboard() {
                   </button>
                 </div>
 
-                {/* Table */}
-                <div className="bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
+                {/* Desktop View */}
+                <div className="hidden md:block bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
                   <table className="w-full text-left text-sm border-collapse">
                     <thead>
                       <tr className="bg-bg text-muted border-b border-border/60 font-semibold text-xs uppercase tracking-wider">
@@ -588,6 +588,63 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                  {heroSlides.map(slide => (
+                    <div key={slide.id} className="bg-white rounded-xl border border-border/60 p-4 shadow-sm space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="relative h-14 w-24 rounded-lg bg-bg border border-border/40 overflow-hidden shrink-0">
+                          <img src={slide.image_url || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=100'} alt="" className="object-cover h-full w-full" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-dark truncate text-sm">{slide.heading}</div>
+                          <div className="text-xs text-muted truncate">{slide.subheading}</div>
+                        </div>
+                        <div className="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded font-mono">
+                          Order: {slide.sort_order}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center text-xs border-t border-border/40 pt-2.5">
+                        <div>
+                          <span className="text-muted block uppercase tracking-wider text-[9px] font-bold">CTA Button</span>
+                          <span className="font-semibold text-dark">{slide.cta_text}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button 
+                            onClick={() => {
+                              setEditingHeroId(slide.id);
+                              setHeroForm({
+                                heading: slide.heading,
+                                subheading: slide.subheading,
+                                image_url: slide.image_url,
+                                cta_text: slide.cta_text,
+                                sort_order: slide.sort_order
+                              });
+                              setShowHeroModal(true);
+                            }}
+                            className="flex items-center space-x-1 px-3 py-1.5 text-xs text-muted hover:text-dark border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[36px]"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button 
+                            onClick={() => handleHeroDelete(slide.id)}
+                            className="flex items-center space-x-1 px-3 py-1.5 text-xs text-muted hover:text-primary border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[36px]"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {heroSlides.length === 0 && (
+                    <div className="p-8 text-center text-muted bg-white rounded-xl border border-border/60">
+                      No banners configured. The homepage will display a default fallback slide.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -628,8 +685,8 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Table */}
-                <div className="bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
+                {/* Desktop View */}
+                <div className="hidden md:block bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
                   <table className="w-full text-left text-sm border-collapse">
                     <thead>
                       <tr className="bg-bg text-muted border-b border-border/60 font-semibold text-xs uppercase tracking-wider">
@@ -707,6 +764,81 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                  {filteredProducts.map(prod => (
+                    <div key={prod.id} className="bg-white rounded-xl border border-border/60 p-4 shadow-sm space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="relative h-16 w-16 rounded-lg bg-bg border border-border/40 overflow-hidden shrink-0">
+                          <img src={prod.images?.[0] || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=100'} alt="" className="object-cover h-full w-full" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-dark text-sm leading-snug">{prod.name}</div>
+                          <div className="text-xs text-muted font-mono mt-0.5 truncate">{prod.slug}</div>
+                          <div className="inline-block bg-bg border border-border/50 text-[10px] text-muted px-2 py-0.5 rounded-full mt-1.5 font-medium">
+                            {prod.categories?.name || 'Unassigned'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center border-t border-border/40 pt-3">
+                        <div>
+                          <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Price</span>
+                          <span className="font-bold text-dark text-sm">{formatCurrency(prod.price)}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-1.5">
+                            <span className="text-[11px] text-muted font-medium">In Stock:</span>
+                            <button 
+                              onClick={() => toggleProductStock(prod.id, prod.in_stock)}
+                              className="text-primary cursor-pointer focus:outline-none"
+                            >
+                              {prod.in_stock ? (
+                                <ToggleRight className="h-7 w-7 text-emerald-600" />
+                              ) : (
+                                <ToggleLeft className="h-7 w-7 text-muted" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2 border-t border-border/40 pt-2.5">
+                        <button 
+                          onClick={() => {
+                            setEditingId(prod.id);
+                            setProductForm({
+                              name: prod.name,
+                              slug: prod.slug,
+                              description: prod.description || '',
+                              price: prod.price,
+                              category_id: prod.category_id || '',
+                              images: prod.images?.length > 0 ? prod.images : [''],
+                              in_stock: prod.in_stock
+                            });
+                            setShowProductModal(true);
+                          }}
+                          className="flex-grow flex items-center justify-center space-x-1.5 px-4 py-2 text-xs text-muted hover:text-dark border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[38px]"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          <span>Edit Product</span>
+                        </button>
+                        <button 
+                          onClick={() => handleProductDelete(prod.id)}
+                          className="flex items-center justify-center px-4.5 py-2 text-xs text-muted hover:text-primary border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[38px]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {filteredProducts.length === 0 && (
+                    <div className="p-8 text-center text-muted bg-white rounded-xl border border-border/60">
+                      No products matching search criteria.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -715,7 +847,7 @@ export default function AdminDashboard() {
                ========================================================================= */}
             {activeTab === 'categories' && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h1 className="font-display text-2xl font-bold text-dark">Manage Categories</h1>
                     <p className="text-sm text-muted">Define parent navigation folders for vehicle accessories.</p>
@@ -726,15 +858,16 @@ export default function AdminDashboard() {
                       setCategoryForm({ name: '', slug: '', image_url: '' });
                       setShowCategoryModal(true);
                     }}
-                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer"
+                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer shrink-0"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add Category</span>
                   </button>
                 </div>
 
-                <div className="bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-sm">
+                {/* Desktop View */}
+                <div className="hidden md:block bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-sm border-collapse">
                     <thead>
                       <tr className="bg-bg text-muted border-b border-border/60 font-semibold text-xs uppercase tracking-wider">
                         <th className="p-4">Visual Image</th>
@@ -778,6 +911,46 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                  {categories.map(cat => (
+                    <div key={cat.id} className="bg-white rounded-xl border border-border/60 p-4 shadow-sm space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="relative h-12 w-12 bg-bg border border-border/40 rounded overflow-hidden shrink-0">
+                          <img src={cat.image_url || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=100'} alt="" className="object-cover h-full w-full" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-dark text-sm">{cat.name}</div>
+                          <div className="text-xs text-muted font-mono truncate">{cat.slug}</div>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <button 
+                            onClick={() => {
+                              setEditingId(cat.id);
+                              setCategoryForm({ name: cat.name, slug: cat.slug, image_url: cat.image_url || '' });
+                              setShowCategoryModal(true);
+                            }}
+                            className="p-2 text-muted hover:text-dark border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[36px]"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => handleCategoryDelete(cat.id)}
+                            className="p-2 text-muted hover:text-primary border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[36px]"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {categories.length === 0 && (
+                    <div className="p-8 text-center text-muted bg-white rounded-xl border border-border/60">
+                      No categories defined yet.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -786,7 +959,7 @@ export default function AdminDashboard() {
                ========================================================================= */}
             {activeTab === 'coupons' && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h1 className="font-display text-2xl font-bold text-dark">Discount Coupons</h1>
                     <p className="text-sm text-muted">Manage promotional codes applied during cart checkout.</p>
@@ -797,15 +970,16 @@ export default function AdminDashboard() {
                       setCouponForm({ code: '', discount_type: 'percent', discount_value: 0, is_active: true });
                       setShowCouponModal(true);
                     }}
-                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer"
+                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer shrink-0"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add Coupon</span>
                   </button>
                 </div>
 
-                <div className="bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-sm">
+                {/* Desktop View */}
+                <div className="hidden md:block bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-sm border-collapse">
                     <thead>
                       <tr className="bg-bg text-muted border-b border-border/60 font-semibold text-xs uppercase tracking-wider">
                         <th className="p-4">Coupon Code</th>
@@ -864,6 +1038,75 @@ export default function AdminDashboard() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                  {coupons.map(coup => (
+                    <div key={coup.id} className="bg-white rounded-xl border border-border/60 p-4 shadow-sm space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="bg-bg border border-border px-2.5 py-1 rounded font-mono font-bold text-dark text-sm tracking-wider">
+                          {coup.code}
+                        </span>
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[11px] text-muted font-medium">Active:</span>
+                          <button 
+                            onClick={() => toggleCouponActive(coup.id, coup.is_active)}
+                            className="text-primary cursor-pointer focus:outline-none"
+                          >
+                            {coup.is_active ? (
+                              <ToggleRight className="h-7 w-7 text-emerald-600" />
+                            ) : (
+                              <ToggleLeft className="h-7 w-7 text-muted" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-baseline border-t border-border/40 pt-2.5">
+                        <div>
+                          <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Discount Type</span>
+                          <span className="font-semibold text-dark text-xs capitalize">{coup.discount_type === 'percent' ? 'Percentage Off' : 'Flat Off'}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Value</span>
+                          <span className="font-bold text-dark text-sm">
+                            {coup.discount_type === 'percent' ? `${coup.discount_value}%` : formatCurrency(coup.discount_value)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2 border-t border-border/40 pt-2.5">
+                        <button 
+                          onClick={() => {
+                            setEditingId(coup.id);
+                            setCouponForm({
+                              code: coup.code,
+                              discount_type: coup.discount_type as 'percent' | 'flat',
+                              discount_value: coup.discount_value,
+                              is_active: coup.is_active
+                            });
+                            setShowCouponModal(true);
+                          }}
+                          className="flex-grow flex items-center justify-center space-x-1.5 px-4 py-2 text-xs text-muted hover:text-dark border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[38px]"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          <span>Edit Coupon</span>
+                        </button>
+                        <button 
+                          onClick={() => handleCouponDelete(coup.id)}
+                          className="flex items-center justify-center px-4.5 py-2 text-xs text-muted hover:text-primary border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[38px]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {coupons.length === 0 && (
+                    <div className="p-8 text-center text-muted bg-white rounded-xl border border-border/60">
+                      No discount coupons defined yet.
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -955,16 +1198,16 @@ export default function AdminDashboard() {
                             {/* Itemized Grid list */}
                             <div className="border border-border/60 rounded-lg bg-white overflow-hidden">
                               <div className="p-3 bg-bg/50 border-b border-border text-xs font-bold text-muted uppercase tracking-wider grid grid-cols-12">
-                                <span className="col-span-8">Product Upgrade</span>
+                                <span className="col-span-7 sm:col-span-8">Product Upgrade</span>
                                 <span className="col-span-2 text-center">Qty</span>
-                                <span className="col-span-2 text-right">Price</span>
+                                <span className="col-span-3 sm:col-span-2 text-right">Price</span>
                               </div>
                               <div className="divide-y divide-border/40 text-xs">
                                 {orderItems.map((item: any, idx: number) => (
                                   <div key={idx} className="p-3 grid grid-cols-12 text-dark font-medium">
-                                    <span className="col-span-8 truncate pr-4">{item.name}</span>
+                                    <span className="col-span-7 sm:col-span-8 truncate pr-4">{item.name}</span>
                                     <span className="col-span-2 text-center font-bold">{item.qty}</span>
-                                    <span className="col-span-2 text-right font-bold">{formatCurrency(item.price)}</span>
+                                    <span className="col-span-3 sm:col-span-2 text-right font-bold">{formatCurrency(item.price)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -987,7 +1230,7 @@ export default function AdminDashboard() {
                ========================================================================= */}
             {activeTab === 'announcements' && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h1 className="font-display text-2xl font-bold text-dark">Announcement Bar</h1>
                     <p className="text-sm text-muted">Manage scrolling messages shown at the top of the website. Add as many as you want.</p>
@@ -998,15 +1241,16 @@ export default function AdminDashboard() {
                       setAnnouncementForm({ message: '', sort_order: announcements.length, is_active: true });
                       setShowAnnouncementModal(true);
                     }}
-                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer"
+                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer shrink-0"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add Message</span>
                   </button>
                 </div>
 
-                <div className="bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-sm">
+                {/* Desktop View */}
+                <div className="hidden md:block bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-sm border-collapse">
                     <thead>
                       <tr className="bg-bg text-muted border-b border-border/60 font-semibold text-xs uppercase tracking-wider">
                         <th className="p-4">Order</th>
@@ -1073,6 +1317,69 @@ export default function AdminDashboard() {
                   </table>
                 </div>
 
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                  {announcements.map(ann => (
+                    <div key={ann.id} className="bg-white rounded-xl border border-border/60 p-4 shadow-sm space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="bg-bg border border-border px-2 py-0.5 rounded font-mono text-xs text-muted">
+                          Sort Order: {ann.sort_order}
+                        </span>
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[11px] text-muted font-medium">Active:</span>
+                          <button 
+                            onClick={async () => {
+                              const newVal = !ann.is_active;
+                              setAnnouncements(prev => prev.map(a => a.id === ann.id ? { ...a, is_active: newVal } : a));
+                              await supabase.from('announcements').update({ is_active: newVal }).eq('id', ann.id);
+                            }}
+                            className="cursor-pointer focus:outline-none"
+                          >
+                            {ann.is_active ? (
+                              <ToggleRight className="h-7 w-7 text-emerald-600" />
+                            ) : (
+                              <ToggleLeft className="h-7 w-7 text-muted" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-dark font-medium leading-relaxed bg-bg/50 p-3 rounded-lg border border-border/40">
+                        {ann.message}
+                      </div>
+
+                      <div className="flex space-x-2 pt-1">
+                        <button 
+                          onClick={() => {
+                            setEditingAnnouncementId(ann.id);
+                            setAnnouncementForm({ message: ann.message, sort_order: ann.sort_order, is_active: ann.is_active });
+                            setShowAnnouncementModal(true);
+                          }}
+                          className="flex-grow flex items-center justify-center space-x-1.5 px-4 py-2 text-xs text-muted hover:text-dark border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[38px]"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          <span>Edit Message</span>
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (!confirm('Delete this announcement?')) return;
+                            await supabase.from('announcements').delete().eq('id', ann.id);
+                            loadAllData();
+                          }}
+                          className="flex items-center justify-center px-4.5 py-2 text-xs text-muted hover:text-primary border border-border rounded-lg bg-bg hover:bg-bg/40 cursor-pointer min-h-[38px]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {announcements.length === 0 && (
+                    <div className="p-8 text-center text-muted bg-white rounded-xl border border-border/60">
+                      No announcements configured yet.
+                    </div>
+                  )}
+                </div>
+
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
                   <p className="font-semibold">ðŸ’¡ How it works</p>
                   <p className="text-xs text-amber-700 mt-1">All active messages scroll horizontally in the gold bar at the top of your website. Add offers, delivery info, or any short message. They appear in the order you set.</p>
@@ -1087,8 +1394,8 @@ export default function AdminDashboard() {
           MODAL: HERO SLIDE ADD/EDIT
          ========================================================================= */}
       {showHeroModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-border my-8">
             <div className="p-5 border-b border-border flex justify-between items-center bg-bg/40">
               <h3 className="font-display font-bold text-dark text-base">{editingHeroId ? 'Edit Hero Slide' : 'Add New Hero Slide'}</h3>
               <button onClick={() => setShowHeroModal(false)} className="text-muted hover:text-dark cursor-pointer">
@@ -1177,8 +1484,8 @@ export default function AdminDashboard() {
           MODAL: ANNOUNCEMENT ADD/EDIT
          ========================================================================= */}
       {showAnnouncementModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border my-8">
             <div className="p-5 border-b border-border flex justify-between items-center bg-bg/40">
               <h3 className="font-display font-bold text-dark text-base">{editingAnnouncementId ? 'Edit Announcement' : 'Add Announcement'}</h3>
               <button onClick={() => setShowAnnouncementModal(false)} className="text-muted hover:text-dark cursor-pointer">
@@ -1265,8 +1572,8 @@ export default function AdminDashboard() {
           MODAL: CATEGORIES ADD/EDIT FORM
          ========================================================================= */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border my-8">
             <div className="p-5 border-b border-border flex justify-between items-center bg-bg/40">
               <h3 className="font-display font-bold text-dark text-base">{editingId ? 'Edit Category' : 'Add New Category'}</h3>
               <button onClick={() => setShowCategoryModal(false)} className="text-muted hover:text-dark cursor-pointer">
@@ -1330,8 +1637,8 @@ export default function AdminDashboard() {
           MODAL: COUPONS ADD/EDIT FORM
          ========================================================================= */}
       {showCouponModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border my-8">
             <div className="p-5 border-b border-border flex justify-between items-center bg-bg/40">
               <h3 className="font-display font-bold text-dark text-base">{editingId ? 'Edit Coupon' : 'Add New Coupon'}</h3>
               <button onClick={() => setShowCouponModal(false)} className="text-muted hover:text-dark cursor-pointer">
