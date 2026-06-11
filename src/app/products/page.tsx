@@ -73,7 +73,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     console.error('Error loading products:', err);
   }
 
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(`Hi, I am looking for a product on SDB Auto Accessories. Category: ${activeCategory}, Search: ${searchQuery}`)}`;
 
   return (

@@ -46,7 +46,7 @@ export default function Navbar() {
   const { cartCount } = useCart();
   const pathname = usePathname();
   const router = useRouter();
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent('Hi, I want to inquire about accessories from SDB Auto Accessories')}`;
 
   // Listen to Cart Added event for flying animation

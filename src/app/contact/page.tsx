@@ -11,7 +11,7 @@ const faqs = [
 ];
 
 export default function ContactPage() {
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
   const [form, setForm] = useState({ name: '', phone: '', vehicle: 'Car', requirement: '' });
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 

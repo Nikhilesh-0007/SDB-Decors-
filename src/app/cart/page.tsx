@@ -20,7 +20,7 @@ export default function CartPage() {
   const [couponSuccess, setCouponSuccess] = useState('');
   const [isValidating, setIsValidating] = useState(false);
 
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();

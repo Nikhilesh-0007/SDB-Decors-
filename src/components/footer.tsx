@@ -37,7 +37,7 @@ export default function Footer() {
   const isAdminRoute = pathname?.startsWith('/admin');
   if (isAdminRoute) return null;
 
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
 
   return (
     <footer style={{ background: '#FFFFFF', borderTop: '1px solid #E5E7EB' }} className="mt-auto">

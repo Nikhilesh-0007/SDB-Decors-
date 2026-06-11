@@ -9,7 +9,7 @@ export default function WhatsAppFloat() {
     setMounted(true);
   }, []);
 
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
   const encodedText = encodeURIComponent('Hi, I need help with an order from SDB Auto Accessories');
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedText}`;
 
