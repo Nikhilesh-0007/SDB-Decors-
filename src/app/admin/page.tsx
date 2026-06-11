@@ -15,7 +15,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const isAuth = sessionStorage.getItem('sgb_admin') === 'true';
+      const isAuth = sessionStorage.getItem('sdb_admin') === 'true';
       if (isAuth) {
         router.replace('/admin/dashboard');
       } else {
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
     try {
       const result = await verifyAdminCredentials(email, password);
       if (result.success) {
-        sessionStorage.setItem('sgb_admin', 'true');
+        sessionStorage.setItem('sdb_admin', 'true');
         router.push('/admin/dashboard');
       } else {
         setError(result.error || 'Invalid credentials.');
@@ -46,17 +46,17 @@ export default function AdminLoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B0F0C' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
         <Loader2 className="h-6 w-6 animate-spin" style={{ color: '#D6A313' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: '#0B0F0C' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: 'var(--color-bg)' }}>
       <div
         className="w-full max-w-sm space-y-8 text-center"
-        style={{ background: '#111811', border: '1px solid rgba(214,163,19,0.22)', borderRadius: '16px', padding: '40px 32px' }}
+        style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '40px 32px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}
       >
         {/* Logo */}
         <div className="space-y-2">
@@ -68,11 +68,11 @@ export default function AdminLoginPage() {
               <path d="M9 17h6" />
               <path d="M14 7l-3 5h5" />
             </svg>
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 700, color: '#F8F3E8' }}>
-              SGB <span style={{ color: '#D6A313' }}>Decors</span>
+            <span style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: '20px', fontWeight: 700, color: 'var(--color-text-light)' }}>
+              SDB Auto <span style={{ color: '#D6A313' }}>Accessories</span>
             </span>
           </div>
-          <p style={{ color: '#9AA397', fontSize: '12px', fontFamily: 'Inter, sans-serif', letterSpacing: '0.06em', fontWeight: 500 }}>
+          <p style={{ color: 'var(--color-muted)', fontSize: '12px', fontFamily: 'var(--font-sans), sans-serif', letterSpacing: '0.06em', fontWeight: 500 }}>
             ADMIN CONTROL PANEL
           </p>
         </div>
@@ -80,26 +80,26 @@ export default function AdminLoginPage() {
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4 text-left">
           <div>
-            <label style={{ color: '#9AA397', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif', letterSpacing: '0.06em' }} className="block mb-1.5">
+            <label style={{ color: 'var(--color-muted)', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-sans), sans-serif', letterSpacing: '0.06em' }} className="block mb-1.5">
               EMAIL
             </label>
             <div className="relative">
               <input
                 type="email"
-                placeholder="admin@sgbdecors.com"
+                placeholder="admin@sdbautoaccessories.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoggingIn}
-                className="w-full pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#D6A313]/50"
-                style={{ background: '#0B0F0C', border: '1px solid rgba(214,163,19,0.18)', borderRadius: '10px', color: '#F8F3E8', fontFamily: 'Inter, sans-serif' }}
+                className="w-full pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#D6A313]/50 text-dark placeholder-muted"
+                style={{ background: 'var(--color-bg)', border: '1px solid #E5E7EB', borderRadius: '10px', fontFamily: 'var(--font-sans), sans-serif' }}
               />
-              <Mail className="absolute left-3 top-3.5 h-4 w-4" style={{ color: '#9AA397' }} />
+              <Mail className="absolute left-3 top-3.5 h-4 w-4" style={{ color: 'var(--color-muted)' }} />
             </div>
           </div>
 
           <div>
-            <label style={{ color: '#9AA397', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif', letterSpacing: '0.06em' }} className="block mb-1.5">
+            <label style={{ color: 'var(--color-muted)', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-sans), sans-serif', letterSpacing: '0.06em' }} className="block mb-1.5">
               PASSWORD
             </label>
             <div className="relative">
@@ -110,15 +110,15 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoggingIn}
-                className="w-full pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#D6A313]/50"
-                style={{ background: '#0B0F0C', border: '1px solid rgba(214,163,19,0.18)', borderRadius: '10px', color: '#F8F3E8', fontFamily: 'Inter, sans-serif' }}
+                className="w-full pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#D6A313]/50 text-dark placeholder-muted"
+                style={{ background: 'var(--color-bg)', border: '1px solid #E5E7EB', borderRadius: '10px', fontFamily: 'var(--font-sans), sans-serif' }}
               />
-              <Lock className="absolute left-3 top-3.5 h-4 w-4" style={{ color: '#9AA397' }} />
+              <Lock className="absolute left-3 top-3.5 h-4 w-4" style={{ color: 'var(--color-muted)' }} />
             </div>
           </div>
 
           {error && (
-            <p className="text-xs font-semibold px-3 py-2.5" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', fontFamily: 'Inter, sans-serif' }}>
+            <p className="text-xs font-semibold px-3 py-2.5" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', fontFamily: 'var(--font-sans), sans-serif' }}>
               {error}
             </p>
           )}
@@ -127,7 +127,7 @@ export default function AdminLoginPage() {
             type="submit"
             disabled={isLoggingIn}
             className="w-full flex items-center justify-center py-3 text-sm font-bold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50"
-            style={{ background: '#D6A313', color: '#101510', borderRadius: '10px', fontFamily: 'Inter, sans-serif', minHeight: '46px', marginTop: '8px' }}
+            style={{ background: '#D6A313', color: '#FFFFFF', borderRadius: '10px', fontFamily: 'var(--font-sans), sans-serif', minHeight: '46px', marginTop: '8px' }}
           >
             {isLoggingIn ? (
               <>

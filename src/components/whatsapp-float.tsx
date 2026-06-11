@@ -10,8 +10,8 @@ export default function WhatsAppFloat() {
   }, []);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
-  const encodedText = encodeURIComponent('Hi, I need help with an order from SGB Decors');
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedText}`;
+  const encodedText = encodeURIComponent('Hi, I need help with an order from SDB Auto Accessories');
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedText}`;
 
   if (!mounted) {
     return null;
@@ -30,7 +30,7 @@ export default function WhatsAppFloat() {
         target="_blank"
         rel="noopener noreferrer"
         className="whatsapp-pulse flex items-center justify-center w-14 h-14 bg-[#25D366] rounded-full text-white shadow-xl hover:bg-[#20ba56] transition-colors duration-300"
-        aria-label="Chat with SGB Decors on WhatsApp"
+        aria-label="Chat with SDB Auto Accessories on WhatsApp"
       >
         <svg
           className="w-8 h-8 fill-current"

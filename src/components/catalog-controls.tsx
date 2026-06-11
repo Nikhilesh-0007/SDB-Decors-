@@ -31,16 +31,16 @@ export default function CatalogControls({
     <div className="flex items-center gap-3 justify-between sm:justify-end">
       {/* Mobile Category Filter */}
       <div className="lg:hidden flex items-center gap-2">
-        <SlidersHorizontal className="h-4 w-4 shrink-0" style={{ color: '#9AA397' }} />
+        <SlidersHorizontal className="h-4 w-4 shrink-0" style={{ color: '#4B5563' }} />
         <select
           value={activeCategory}
           onChange={(e) => handleCategoryChange(e.target.value)}
           className="border-none text-sm font-medium focus:outline-none cursor-pointer"
-          style={{ background: 'transparent', color: '#F8F3E8', fontFamily: 'Inter, sans-serif' }}
+          style={{ background: 'transparent', color: '#111827', fontFamily: 'var(--font-sans), sans-serif' }}
         >
-          <option value="all" style={{ background: '#111811', color: '#F8F3E8' }}>All Categories</option>
+          <option value="all" style={{ background: '#FFFFFF', color: '#111827' }}>All Categories</option>
           {categories.map((c) => (
-            <option key={c.id} value={c.slug} style={{ background: '#111811', color: '#F8F3E8' }}>
+            <option key={c.id} value={c.slug} style={{ background: '#FFFFFF', color: '#111827' }}>
               {c.name}
             </option>
           ))}
@@ -49,16 +49,16 @@ export default function CatalogControls({
 
       {/* Sort Selector */}
       <div className="flex items-center gap-2">
-        <ArrowUpDown className="h-4 w-4 shrink-0" style={{ color: '#9AA397' }} />
+        <ArrowUpDown className="h-4 w-4 shrink-0" style={{ color: '#4B5563' }} />
         <select
           value={sortBy}
           onChange={(e) => handleSortChange(e.target.value)}
           className="border-none text-sm font-medium focus:outline-none cursor-pointer"
-          style={{ background: 'transparent', color: '#D6A313', fontFamily: 'Inter, sans-serif' }}
+          style={{ background: 'transparent', color: '#D6A313', fontFamily: 'var(--font-sans), sans-serif' }}
         >
-          <option value="latest" style={{ background: '#111811', color: '#F8F3E8' }}>Latest</option>
-          <option value="price-asc" style={{ background: '#111811', color: '#F8F3E8' }}>Price: Low to High</option>
-          <option value="price-desc" style={{ background: '#111811', color: '#F8F3E8' }}>Price: High to Low</option>
+          <option value="latest" style={{ background: '#FFFFFF', color: '#111827' }}>Latest</option>
+          <option value="price-asc" style={{ background: '#FFFFFF', color: '#111827' }}>Price: Low to High</option>
+          <option value="price-desc" style={{ background: '#FFFFFF', color: '#111827' }}>Price: High to Low</option>
         </select>
       </div>
     </div>

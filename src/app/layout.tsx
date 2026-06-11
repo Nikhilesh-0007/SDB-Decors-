@@ -7,18 +7,18 @@ import WhatsAppFloat from '@/components/whatsapp-float';
 import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
-  title: 'SGB Decors | Premium Car & Bike Accessories',
-  description: 'Upgrade your ride with SGB Decors. Premium car and bike accessories including styling, protection, utility, and lights in India. Order easily via WhatsApp.',
+  title: 'SDB Auto Accessories | Premium Car & Bike Accessories',
+  description: 'Upgrade your ride with SDB Auto Accessories. Premium car and bike accessories including styling, protection, utility, and lights in India. Order easily via WhatsApp.',
   keywords: 'car accessories, bike accessories, automotive decor, car styling, premium bike upgrades, india car parts, whatsapp shopping',
   openGraph: {
-    title: 'SGB Decors | Premium Car & Bike Accessories',
+    title: 'SDB Auto Accessories | Premium Car & Bike Accessories',
     description: 'Upgrade your ride with premium styling, lights, and protection accessories. Fast delivery across India & WhatsApp support.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SGB Decors | Premium Car & Bike Accessories',
-    description: 'Upgrade your ride with SGB Decors. Premium styling, lights, and protection accessories across India.',
+    title: 'SDB Auto Accessories | Premium Car & Bike Accessories',
+    description: 'Upgrade your ride with SDB Auto Accessories. Premium styling, lights, and protection accessories across India.',
   },
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col" style={{ background: '#0B0F0C', color: '#F8F3E8' }}>
+      <body className="min-h-full flex flex-col">
         <CartProvider>
           <AnnouncementBar />
           <Navbar />

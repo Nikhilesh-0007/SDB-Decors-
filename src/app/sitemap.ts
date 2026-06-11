@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 export const revalidate = 3600; // Regenerate sitemap once per hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sgbdecors.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sdbautoaccessories.com';
 
   let products: any[] = [];
   let categories: any[] = [];

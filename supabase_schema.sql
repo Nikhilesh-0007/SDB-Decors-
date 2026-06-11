@@ -1,4 +1,4 @@
--- SGB Decors Supabase Database Schema Reset
+-- SDB Auto Accessories Supabase Database Schema Reset
 -- Run this in your Supabase Project SQL Editor to set up the database.
 
 -- Drop existing tables to start fresh
@@ -35,6 +35,8 @@ create table public.products (
     images text[] default '{}'::text[],
     category_id uuid references public.categories(id) on delete set null,
     in_stock boolean default true not null,
+    sku text,
+    keywords text,
     created_at timestamp with time zone default now() not null
 );
 
@@ -61,14 +63,15 @@ create table public.orders (
     created_at timestamp with time zone default now() not null
 );
 
--- Hero Settings Table (Single-row configuration)
+-- Hero Settings Table (Multi-banner slideshow configuration)
 create table public.hero_settings (
-    id integer primary key default 1 check (id = 1),
+    id uuid default gen_random_uuid() primary key,
     heading text default 'Premium Car & Bike Accessories' not null,
     subheading text default 'Upgrade your ride with high-performance styling, premium lighting, and durable protective gear.' not null,
-    image_url text,
+    image_url text not null,
     cta_text text default 'Shop Now' not null,
-    updated_at timestamp with time zone default now() not null
+    sort_order integer default 0 not null,
+    created_at timestamp with time zone default now() not null
 );
 
 -- Admin Users Table (Custom credentials)
@@ -136,9 +139,11 @@ insert into public.categories (name, slug, image_url) values
 ('Car Protection', 'car-protection', 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=400'),
 ('LED Lighting', 'led-lighting', 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=400');
 
--- Seed Hero Settings (Default Row)
-insert into public.hero_settings (id, heading, subheading, image_url, cta_text) values
-(1, 'Premium Car & Bike Accessories', 'Upgrade your ride with high-performance styling, premium lighting, and durable protective gear.', 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1600', 'Shop Now');
+-- Seed Hero Settings (Default Slides)
+insert into public.hero_settings (heading, subheading, image_url, cta_text, sort_order) values
+('Premium Car & Bike Accessories', 'Upgrade your ride with high-performance styling, premium lighting, and durable protective gear.', 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1600', 'Shop Now', 1),
+('Style Up Your Driveway', 'Exclusive collection of steering covers, car chargers, ambient lighting, and daily utility tools.', 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=1600', 'Explore Styling', 2),
+('Durable Bike Protections', 'Water-resistant UV body covers, universal phone mounts, and robust safety gear for every rider.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=1600', 'View Bike Gear', 3);
 
 -- Seed Coupons
 insert into public.coupons (code, discount_type, discount_value, is_active) values
@@ -158,7 +163,7 @@ begin
     select id into protection_id from public.categories where slug = 'car-protection';
     select id into lighting_id from public.categories where slug = 'led-lighting';
 
-    insert into public.products (name, slug, description, price, in_stock, category_id, images) values
+    insert into public.products (name, slug, description, price, in_stock, category_id, images, sku, keywords) values
     (
         'Leatherette Steering Wheel Cover', 
         'leatherette-steering-wheel-cover', 
@@ -166,7 +171,9 @@ begin
         899.00, 
         true, 
         styling_id, 
-        array['https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=600']
+        array['https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=600'],
+        'SDB-STEER-001',
+        'steering, cover, leatherette, styling, grip, protect'
     ),
     (
         'Dual-Port USB Car Fast Charger', 
@@ -175,7 +182,9 @@ begin
         499.00, 
         true, 
         styling_id, 
-        array['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600']
+        array['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600'],
+        'SDB-CHARG-002',
+        'charger, fast, usb, dual, car, mobile'
     ),
     (
         'Heavy Duty Bike Body Cover', 
@@ -184,7 +193,9 @@ begin
         750.00, 
         true, 
         bike_id, 
-        array['https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600']
+        array['https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600'],
+        'SDB-COVER-003',
+        'cover, bike, body, protection, weather, motorcycle'
     ),
     (
         'LED H4 High Beam Headlight Bulb', 
@@ -193,7 +204,9 @@ begin
         2499.00, 
         true, 
         lighting_id, 
-        array['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=600']
+        array['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=600'],
+        'SDB-LIGHT-004',
+        'led, light, bulb, headlamp, beam, bright'
     ),
     (
         'Anti-Scratch Clear Door Guard Protectors', 
@@ -202,7 +215,9 @@ begin
         350.00, 
         false, 
         protection_id, 
-        array['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600']
+        array['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600'],
+        'SDB-GUARD-005',
+        'guard, door, scratch, protector, clear'
     ),
     (
         'Universal Mobile Phone Mount Holder', 
@@ -211,13 +226,15 @@ begin
         599.00, 
         true, 
         bike_id, 
-        array['https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600']
+        array['https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=600'],
+        'SDB-MOUNT-006',
+        'mount, phone, holder, bike, motorcycle, universal'
     );
 end $$;
 
 -- Seed Admin Credentials
 insert into public.admin_users (email, password) values
-('admin@sgbdecors.com', 'SGBdecorsAdmin2026!');
+('admin@sdbautoaccessories.com', 'SDBaccessoriesAdmin2026!');
 
 
 -- =========================================================================

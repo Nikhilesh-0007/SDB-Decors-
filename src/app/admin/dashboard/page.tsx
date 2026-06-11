@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -22,7 +22,10 @@ export default function AdminDashboard() {
 
   // Database States
   const [stats, setStats] = useState({ products: 0, categories: 0, coupons: 0, orders: 0 });
-  const [hero, setHero] = useState({ heading: '', subheading: '', image_url: '', cta_text: '' });
+  const [heroSlides, setHeroSlides] = useState<any[]>([]);
+  const [showHeroModal, setShowHeroModal] = useState(false);
+  const [editingHeroId, setEditingHeroId] = useState<string | null>(null);
+  const [heroForm, setHeroForm] = useState({ heading: '', subheading: '', image_url: '', cta_text: '', sort_order: 0 });
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -54,7 +57,7 @@ export default function AdminDashboard() {
   // Check Auth
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const isAuth = sessionStorage.getItem('sgb_admin') === 'true';
+      const isAuth = sessionStorage.getItem('sdb_admin') === 'true';
       if (!isAuth) {
         router.replace('/admin');
       } else {
@@ -77,11 +80,9 @@ export default function AdminDashboard() {
       const loadedProds = prods || [];
       setProducts(loadedProds);
 
-      // Load Hero Settings
-      const { data: heroData } = await supabase.from('hero_settings').select('*').eq('id', 1).single();
-      if (heroData) {
-        setHero(heroData);
-      }
+      // Load Hero Settings (Slides)
+      const { data: heroData } = await supabase.from('hero_settings').select('*').order('sort_order', { ascending: true });
+      setHeroSlides(heroData || []);
 
       // Load Coupons
       const { data: coups } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
@@ -114,28 +115,46 @@ export default function AdminDashboard() {
 
   // Logout Handler
   const handleLogout = () => {
-    sessionStorage.removeItem('sgb_admin');
+    sessionStorage.removeItem('sdb_admin');
     router.push('/admin');
   };
 
-  // Hero upsert
-  const handleHeroSave = async (e: React.FormEvent) => {
+  // Hero CRUD
+  const handleHeroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase
-        .from('hero_settings')
-        .upsert({
-          id: 1,
-          heading: hero.heading,
-          subheading: hero.subheading,
-          image_url: hero.image_url,
-          cta_text: hero.cta_text,
-          updated_at: new Date().toISOString()
-        });
-      if (error) throw error;
-      alert('Hero settings saved successfully!');
+      const payload = {
+        heading: heroForm.heading,
+        subheading: heroForm.subheading,
+        image_url: heroForm.image_url,
+        cta_text: heroForm.cta_text,
+        sort_order: Number(heroForm.sort_order)
+      };
+
+      if (editingHeroId) {
+        const { error } = await supabase.from('hero_settings').update(payload).eq('id', editingHeroId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('hero_settings').insert(payload);
+        if (error) throw error;
+      }
+      setShowHeroModal(false);
+      setEditingHeroId(null);
+      setHeroForm({ heading: '', subheading: '', image_url: '', cta_text: '', sort_order: 0 });
+      loadAllData();
     } catch (err: any) {
-      alert(`Save failed: ${err.message}`);
+      alert(`Failed to save hero slide: ${err.message}`);
+    }
+  };
+
+  const handleHeroDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this hero slide?')) return;
+    try {
+      const { error } = await supabase.from('hero_settings').delete().eq('id', id);
+      if (error) throw error;
+      loadAllData();
+    } catch (err: any) {
+      alert(`Delete failed: ${err.message}`);
     }
   };
 
@@ -321,7 +340,7 @@ export default function AdminDashboard() {
       <aside className="hidden md:flex flex-col w-64 bg-dark text-white shrink-0">
         <div className="p-6 border-b border-white/5 flex items-center space-x-2">
           <Car className="h-6 w-6 text-primary fill-primary" />
-          <span className="font-display text-lg font-bold">SGB Admin</span>
+          <span className="font-display text-lg font-bold">SDB Admin</span>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
@@ -369,7 +388,7 @@ export default function AdminDashboard() {
       <header className="md:hidden bg-dark text-white p-4 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center space-x-2">
           <Car className="h-5 w-5 text-primary fill-primary" />
-          <span className="font-display text-base font-bold">SGB Admin</span>
+          <span className="font-display text-base font-bold">SDB Admin</span>
         </div>
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 cursor-pointer">
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -433,7 +452,7 @@ export default function AdminDashboard() {
               <div className="space-y-8 animate-in fade-in duration-200">
                 <div>
                   <h1 className="font-display text-2xl font-bold text-dark">Dashboard Overview</h1>
-                  <p className="text-sm text-muted">Real-time statistics of SGB Decors catalog.</p>
+                  <p className="text-sm text-muted">Real-time statistics of SDB Auto Accessories catalog.</p>
                 </div>
 
                 {/* Product counter alert */}
@@ -486,80 +505,88 @@ export default function AdminDashboard() {
                 B. TAB: HERO SETTINGS
                ========================================================================= */}
             {activeTab === 'hero' && (
-              <div className="space-y-8 animate-in fade-in duration-200">
-                <div>
-                  <h1 className="font-display text-2xl font-bold text-dark">Hero Banner Settings</h1>
-                  <p className="text-sm text-muted">Update landing header titles and background imagery.</p>
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h1 className="font-display text-2xl font-bold text-dark">Hero Banner Settings</h1>
+                    <p className="text-sm text-muted">Manage the rotating slideshow banners shown at the top of the Home page.</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setEditingHeroId(null);
+                      setHeroForm({ heading: '', subheading: '', image_url: '', cta_text: '', sort_order: heroSlides.length + 1 });
+                      setShowHeroModal(true);
+                    }}
+                    className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Hero Slide</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  {/* Left edit form */}
-                  <form onSubmit={handleHeroSave} className="lg:col-span-7 bg-white rounded-xl border border-border/60 p-6 shadow-sm space-y-5">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-dark uppercase tracking-wider block">Heading</label>
-                      <input 
-                        type="text" 
-                        value={hero.heading}
-                        onChange={e => setHero(prev => ({ ...prev, heading: e.target.value }))}
-                        className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-dark uppercase tracking-wider block">Subheading</label>
-                      <textarea 
-                        rows={3}
-                        value={hero.subheading}
-                        onChange={e => setHero(prev => ({ ...prev, subheading: e.target.value }))}
-                        className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none resize-none"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-dark uppercase tracking-wider block">CTA Button Text</label>
-                      <input 
-                        type="text" 
-                        value={hero.cta_text}
-                        onChange={e => setHero(prev => ({ ...prev, cta_text: e.target.value }))}
-                        className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-dark uppercase tracking-wider block">Image URL</label>
-                      <input 
-                        type="text" 
-                        value={hero.image_url}
-                        onChange={e => setHero(prev => ({ ...prev, image_url: e.target.value }))}
-                        className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <button type="submit" className="bg-primary text-white font-bold text-sm px-6 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer">
-                      Save Changes
-                    </button>
-                  </form>
-
-                  {/* Right Live Preview Frame */}
-                  <div className="lg:col-span-5 space-y-4">
-                    <span className="text-xs font-bold text-muted uppercase tracking-wider block">Live Banner Preview</span>
-                    <div className="relative aspect-video rounded-xl overflow-hidden shadow-md border border-border">
-                      {hero.image_url ? (
-                        <img src={hero.image_url} alt="Hero image" className="absolute inset-0 w-full h-full object-cover" />
-                      ) : (
-                        <div className="absolute inset-0 bg-dark" />
+                {/* Table */}
+                <div className="bg-white rounded-xl border border-border/60 overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-bg text-muted border-b border-border/60 font-semibold text-xs uppercase tracking-wider">
+                        <th className="p-4">Visual Image</th>
+                        <th className="p-4">Heading / Subheading</th>
+                        <th className="p-4">CTA Button</th>
+                        <th className="p-4 text-center">Sort Order</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {heroSlides.map(slide => (
+                        <tr key={slide.id} className="hover:bg-bg/25">
+                          <td className="p-4">
+                            <div className="relative h-14 w-24 rounded-lg bg-bg border border-border/40 overflow-hidden">
+                              <img src={slide.image_url || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=100'} alt="" className="object-cover h-full w-full" />
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="font-semibold text-dark max-w-xs truncate">{slide.heading}</div>
+                            <div className="text-xs text-muted max-w-xs truncate">{slide.subheading}</div>
+                          </td>
+                          <td className="p-4 font-semibold text-dark">{slide.cta_text}</td>
+                          <td className="p-4 text-center font-mono text-dark">{slide.sort_order}</td>
+                          <td className="p-4 text-right">
+                            <div className="flex justify-end space-x-2">
+                              <button 
+                                onClick={() => {
+                                  setEditingHeroId(slide.id);
+                                  setHeroForm({
+                                    heading: slide.heading,
+                                    subheading: slide.subheading,
+                                    image_url: slide.image_url,
+                                    cta_text: slide.cta_text,
+                                    sort_order: slide.sort_order
+                                  });
+                                  setShowHeroModal(true);
+                                }}
+                                className="p-1.5 text-muted hover:text-dark border border-border rounded hover:bg-bg cursor-pointer"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => handleHeroDelete(slide.id)}
+                                className="p-1.5 text-muted hover:text-primary border border-border rounded hover:bg-bg cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {heroSlides.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="p-12 text-center text-muted">
+                            No banners configured. The homepage will display a default fallback slide.
+                          </td>
+                        </tr>
                       )}
-                      <div className="absolute inset-0 bg-dark/70" />
-                      <div className="absolute inset-0 flex flex-col justify-center p-6 space-y-2">
-                        <span className="text-[9px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded uppercase self-start">âš¡ PREVIEW</span>
-                        <h3 className="font-display font-bold text-white text-base leading-tight pr-4 border-l-2 border-primary pl-2">{hero.heading || 'Heading'}</h3>
-                        <p className="text-white/70 text-[10px] line-clamp-2 leading-relaxed font-light">{hero.subheading || 'Subheading'}</p>
-                        <button className="bg-primary text-white text-[10px] font-bold py-1.5 px-3 rounded self-start mt-1">
-                          {hero.cta_text || 'CTA Text'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
@@ -1055,6 +1082,96 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
+
+      {/* =========================================================================
+          MODAL: HERO SLIDE ADD/EDIT
+         ========================================================================= */}
+      {showHeroModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-border">
+            <div className="p-5 border-b border-border flex justify-between items-center bg-bg/40">
+              <h3 className="font-display font-bold text-dark text-base">{editingHeroId ? 'Edit Hero Slide' : 'Add New Hero Slide'}</h3>
+              <button onClick={() => setShowHeroModal(false)} className="text-muted hover:text-dark cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleHeroSubmit} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Heading</label>
+                <input 
+                  type="text"
+                  value={heroForm.heading}
+                  onChange={e => setHeroForm(prev => ({ ...prev, heading: e.target.value }))}
+                  placeholder="e.g. Upgrade Your Ride"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Subheading</label>
+                <textarea 
+                  rows={2}
+                  value={heroForm.subheading}
+                  onChange={e => setHeroForm(prev => ({ ...prev, subheading: e.target.value }))}
+                  placeholder="Provide utility, styling aspects, vehicle compatibility details..."
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none resize-none"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">CTA Button Text</label>
+                  <input 
+                    type="text"
+                    value={heroForm.cta_text}
+                    onChange={e => setHeroForm(prev => ({ ...prev, cta_text: e.target.value }))}
+                    placeholder="e.g. Shop Now"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Sort Order</label>
+                  <input 
+                    type="number"
+                    value={heroForm.sort_order}
+                    onChange={e => setHeroForm(prev => ({ ...prev, sort_order: Number(e.target.value) }))}
+                    placeholder="e.g. 1"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Image URL</label>
+                <input 
+                  type="text"
+                  value={heroForm.image_url}
+                  onChange={e => setHeroForm(prev => ({ ...prev, image_url: e.target.value }))}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="pt-4 border-t border-border flex justify-end space-x-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowHeroModal(false)}
+                  className="px-4 py-2 border border-border rounded-lg text-xs font-bold text-muted hover:bg-bg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/95 cursor-pointer"
+                >
+                  {editingHeroId ? 'Save Slide' : 'Create Slide'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           MODAL: ANNOUNCEMENT ADD/EDIT

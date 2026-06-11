@@ -43,6 +43,26 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const handleAddToCart = () => {
     if (!product.in_stock) return;
 
+    // Bounding Client Rect for flying animation
+    const imgEl = document.querySelector('.product-gallery-container img');
+    const rect = imgEl
+      ? imgEl.getBoundingClientRect()
+      : document.querySelector('.product-gallery-container')?.getBoundingClientRect();
+
+    if (rect) {
+      window.dispatchEvent(new CustomEvent('add-to-cart-animate', {
+        detail: {
+          imageUrl: images[activeImageIdx],
+          rect: {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+          }
+        }
+      }));
+    }
+
     addToCart({
       product_id: product.id,
       name: product.name,
@@ -60,7 +80,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       {/* 1. IMAGE GALLERY */}
       <div className="space-y-4">
         {/* Main image view */}
-        <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-white border border-border/60 shadow-sm">
+        <div className="product-gallery-container relative aspect-square w-full overflow-hidden rounded-xl bg-white border border-border/60 shadow-sm">
           <Image
             src={images[activeImageIdx]}
             alt={product.name}
@@ -80,7 +100,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 onClick={() => setActiveImageIdx(idx)}
                 className={cn(
                   'relative aspect-square h-16 w-16 overflow-hidden rounded-lg bg-white border-2 transition-all shrink-0 cursor-pointer',
-                  activeImageIdx === idx ? 'border-[#C9A84C]' : 'border-transparent hover:border-border'
+                  activeImageIdx === idx ? 'border-[#D6A313]' : 'border-transparent hover:border-border'
                 )}
               >
                 <Image
@@ -100,7 +120,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       <div className="space-y-6 flex flex-col justify-center">
         {/* Category Label */}
         {product.categories && (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#C9A84C]">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#D6A313]">
             {product.categories.name}
           </span>
         )}
@@ -111,7 +131,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         </h1>
 
         {/* Price Tag */}
-        <p className="text-3xl font-bold font-display text-[#0A7255]">
+        <p className="text-3xl font-bold font-display text-[#111827]">
           {formatCurrency(Number(product.price))}
         </p>
 
@@ -130,7 +150,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               Currently Out of Stock
             </span>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-[#0A7255]/10 border border-[#0A7255]/20 px-3 py-1 text-xs font-semibold text-[#0A7255]">
+            <span className="inline-flex items-center rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs font-semibold text-green-700">
               ✓ In Stock & Ready to Ship
             </span>
           )}
@@ -172,7 +192,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   'flex-grow inline-flex items-center justify-center rounded-lg py-3.5 px-8 text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer',
                   isAdded
                     ? 'bg-emerald-700 hover:bg-emerald-800'
-                    : 'bg-[#C9A84C] hover:bg-[#B8943D] text-[#0D1B14] hover:shadow-lg'
+                    : 'bg-[#D6A313] hover:bg-[#b88b0f] text-white hover:shadow-lg'
                 )}
               >
                 {isAdded ? (
@@ -194,15 +214,15 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         {/* Benefits Badges */}
         <div className="pt-6 border-t border-border grid grid-cols-3 gap-4 text-center">
           <div className="flex flex-col items-center space-y-1">
-            <Truck className="h-5 w-5 text-[#C9A84C] stroke-[1.5]" />
+            <Truck className="h-5 w-5 text-[#D6A313] stroke-[1.5]" />
             <span className="text-[10px] font-bold text-dark uppercase tracking-wider">Fast Delivery</span>
           </div>
           <div className="flex flex-col items-center space-y-1">
-            <ShieldCheck className="h-5 w-5 text-[#C9A84C] stroke-[1.5]" />
+            <ShieldCheck className="h-5 w-5 text-[#D6A313] stroke-[1.5]" />
             <span className="text-[10px] font-bold text-dark uppercase tracking-wider">100% Genuine</span>
           </div>
           <div className="flex flex-col items-center space-y-1">
-            <MessageSquare className="h-5 w-5 text-[#C9A84C] stroke-[1.5]" />
+            <MessageSquare className="h-5 w-5 text-[#D6A313] stroke-[1.5]" />
             <span className="text-[10px] font-bold text-dark uppercase tracking-wider">WhatsApp Help</span>
           </div>
         </div>

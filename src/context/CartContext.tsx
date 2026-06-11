@@ -44,11 +44,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      const storedCart = localStorage.getItem('sgb_cart');
+      const storedCart = localStorage.getItem('sdb_cart');
       if (storedCart) {
         setCartItems(JSON.parse(storedCart));
       }
-      const storedCoupon = localStorage.getItem('sgb_coupon');
+      const storedCoupon = localStorage.getItem('sdb_coupon');
       if (storedCoupon) {
         setCoupon(JSON.parse(storedCoupon));
       }
@@ -62,7 +62,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoaded) {
       try {
-        localStorage.setItem('sgb_cart', JSON.stringify(cartItems));
+        localStorage.setItem('sdb_cart', JSON.stringify(cartItems));
       } catch (e) {
         console.error('Failed to save cart:', e);
       }
@@ -74,9 +74,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (isLoaded) {
       try {
         if (coupon) {
-          localStorage.setItem('sgb_coupon', JSON.stringify(coupon));
+          localStorage.setItem('sdb_coupon', JSON.stringify(coupon));
         } else {
-          localStorage.removeItem('sgb_coupon');
+          localStorage.removeItem('sdb_coupon');
         }
       } catch (e) {
         console.error('Failed to save coupon:', e);
@@ -115,8 +115,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = () => {
     setCartItems([]);
     setCoupon(null);
-    localStorage.removeItem('sgb_cart');
-    localStorage.removeItem('sgb_coupon');
+    localStorage.removeItem('sdb_cart');
+    localStorage.removeItem('sdb_coupon');
   };
 
   const applyCoupon = (appliedCoupon: Coupon) => {

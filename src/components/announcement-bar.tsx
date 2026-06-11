@@ -44,19 +44,17 @@ export default function AnnouncementBar() {
 
   if (!loaded) {
     return (
-      <div style={{ background: '#D6A313', height: '32px' }} />
+      <div style={{ background: 'var(--color-gold)', height: '32px' }} />
     );
   }
 
-  // Build the scrolling text with pipe separators
   const scrollText = announcements.map(a => a.message).join('   •   ');
-  // Duplicate for seamless loop
   const fullText = `${scrollText}   •   ${scrollText}   •   ${scrollText}`;
 
   return (
     <div
       style={{
-        background: '#D6A313',
+        background: 'var(--color-gold)',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
         position: 'relative',
@@ -69,7 +67,7 @@ export default function AnnouncementBar() {
         className="animate-marquee"
         style={{
           display: 'inline-block',
-          fontFamily: 'Inter, system-ui, sans-serif',
+          fontFamily: 'var(--font-sans), sans-serif',
           fontWeight: 600,
           fontSize: '12px',
           color: '#101510',

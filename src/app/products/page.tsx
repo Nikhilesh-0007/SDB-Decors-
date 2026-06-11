@@ -4,6 +4,7 @@ import { Search, X, MessageCircle, Truck, ShieldCheck, Package } from 'lucide-re
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/product-card';
 import CatalogControls from '@/components/catalog-controls';
+import CatalogSearch from '@/components/catalog-search';
 
 interface SearchParams {
   category?: string;
@@ -73,10 +74,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   }
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I am looking for a product on SGB Decors. Category: ${activeCategory}, Search: ${searchQuery}`)}`;
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(`Hi, I am looking for a product on SDB Auto Accessories. Category: ${activeCategory}, Search: ${searchQuery}`)}`;
 
   return (
-    <div style={{ background: '#0B0F0C', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
       {/* ═══════════ PAGE HEADER ═══════════ */}
       <section className="pt-16 pb-10 max-md:pt-10 max-md:pb-7">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -87,7 +88,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               background: 'rgba(214,163,19,0.1)',
               border: '1px solid rgba(214,163,19,0.25)',
               color: '#D6A313',
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontWeight: 600,
               fontSize: '11px',
               letterSpacing: '0.07em',
@@ -101,10 +102,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           {/* Heading */}
           <h1
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
               fontWeight: 700,
-              color: '#F8F3E8',
+              color: '#111827',
               lineHeight: 1.15,
             }}
           >
@@ -112,7 +113,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           </h1>
 
           {/* Subheading */}
-          <p style={{ color: '#9AA397', fontSize: '14px', marginTop: '10px', maxWidth: '540px', lineHeight: 1.6, fontFamily: 'Inter, sans-serif' }}>
+          <p style={{ color: '#4B5563', fontSize: '14px', marginTop: '10px', maxWidth: '540px', lineHeight: 1.6, fontFamily: 'var(--font-sans), sans-serif' }}>
             Browse styling upgrades, protection gear, lighting, chargers and daily-use accessories for your ride.
           </p>
 
@@ -126,7 +127,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               <span
                 key={i}
                 className="inline-flex items-center gap-1.5"
-                style={{ color: '#9AA397', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: 500 }}
+                style={{ color: '#4B5563', fontSize: '12px', fontFamily: 'var(--font-sans), sans-serif', fontWeight: 500 }}
               >
                 <stat.icon className="h-3.5 w-3.5" style={{ color: '#D6A313' }} />
                 {stat.text}
@@ -147,13 +148,13 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 {/* Category Filter Card */}
                 <div
                   style={{
-                    background: '#111811',
-                    border: '1px solid rgba(214,163,19,0.22)',
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
                     borderRadius: '12px',
                     padding: '20px',
                   }}
                 >
-                  <h3 style={{ color: '#F8F3E8', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '14px' }}>
+                  <h3 style={{ color: '#111827', fontFamily: 'var(--font-display), sans-serif', fontSize: '13px', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '14px' }}>
                     CATEGORIES
                   </h3>
                   <ul className="space-y-1">
@@ -163,9 +164,9 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                         className="block px-3 py-2 text-sm font-medium transition-all duration-150"
                         style={{
                           borderRadius: '8px',
-                          fontFamily: 'Inter, sans-serif',
-                          background: activeCategory === 'all' ? 'rgba(214,163,19,0.12)' : 'transparent',
-                          color: activeCategory === 'all' ? '#D6A313' : '#9AA397',
+                          fontFamily: 'var(--font-sans), sans-serif',
+                          background: activeCategory === 'all' ? 'rgba(214,163,19,0.08)' : 'transparent',
+                          color: activeCategory === 'all' ? '#D6A313' : '#4B5563',
                           fontWeight: activeCategory === 'all' ? 600 : 500,
                         }}
                       >
@@ -176,12 +177,12 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                       <li key={cat.id}>
                         <Link
                           href={{ pathname: '/products', query: { ...params, category: cat.slug } }}
-                          className="block px-3 py-2 text-sm font-medium transition-all duration-150 hover:bg-white/5"
+                          className="block px-3 py-2 text-sm font-medium transition-all duration-150 hover:bg-gray-50"
                           style={{
                             borderRadius: '8px',
-                            fontFamily: 'Inter, sans-serif',
-                            background: activeCategory === cat.slug ? 'rgba(214,163,19,0.12)' : 'transparent',
-                            color: activeCategory === cat.slug ? '#D6A313' : '#9AA397',
+                            fontFamily: 'var(--font-sans), sans-serif',
+                            background: activeCategory === cat.slug ? 'rgba(214,163,19,0.08)' : 'transparent',
+                            color: activeCategory === cat.slug ? '#D6A313' : '#4B5563',
                             fontWeight: activeCategory === cat.slug ? 600 : 500,
                           }}
                         >
@@ -194,8 +195,8 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
                 {/* Active filters */}
                 {(activeCategory !== 'all' || searchQuery) && (
-                  <div style={{ background: '#111811', border: '1px solid rgba(214,163,19,0.22)', borderRadius: '12px', padding: '16px' }}>
-                    <h4 style={{ color: '#F8F3E8', fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '10px' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '16px' }}>
+                    <h4 style={{ color: '#111827', fontFamily: 'var(--font-display), sans-serif', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '10px' }}>
                       ACTIVE FILTERS
                     </h4>
                     <div className="flex flex-wrap gap-2">
@@ -203,7 +204,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                         <Link
                           href={{ pathname: '/products', query: { ...params, category: 'all' } }}
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium"
-                          style={{ background: 'rgba(214,163,19,0.1)', color: '#D6A313', borderRadius: '6px', fontFamily: 'Inter, sans-serif' }}
+                          style={{ background: 'rgba(214,163,19,0.08)', color: '#D6A313', borderRadius: '6px', fontFamily: 'var(--font-sans), sans-serif' }}
                         >
                           {activeCategory} <X className="h-3 w-3" />
                         </Link>
@@ -212,13 +213,13 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                         <Link
                           href={{ pathname: '/products', query: { ...params, search: '' } }}
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium"
-                          style={{ background: 'rgba(214,163,19,0.1)', color: '#D6A313', borderRadius: '6px', fontFamily: 'Inter, sans-serif' }}
+                          style={{ background: 'rgba(214,163,19,0.08)', color: '#D6A313', borderRadius: '6px', fontFamily: 'var(--font-sans), sans-serif' }}
                         >
                           &ldquo;{searchQuery}&rdquo; <X className="h-3 w-3" />
                         </Link>
                       )}
                     </div>
-                    <Link href="/products" className="block mt-3 text-xs font-semibold" style={{ color: '#D6A313', fontFamily: 'Inter, sans-serif' }}>
+                    <Link href="/products" className="block mt-3 text-xs font-semibold" style={{ color: '#D6A313', fontFamily: 'var(--font-sans), sans-serif' }}>
                       Clear all
                     </Link>
                   </div>
@@ -227,16 +228,16 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 {/* WhatsApp Help Card */}
                 <div
                   style={{
-                    background: '#172117',
-                    border: '1px solid rgba(214,163,19,0.15)',
+                    background: '#F0FDF4',
+                    border: '1px solid #DCFCE7',
                     borderRadius: '12px',
                     padding: '20px',
                   }}
                 >
-                  <h4 style={{ color: '#F8F3E8', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                  <h4 style={{ color: '#15803d', fontFamily: 'var(--font-display), sans-serif', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
                     Need help?
                   </h4>
-                  <p style={{ color: '#9AA397', fontSize: '12px', lineHeight: 1.5, fontFamily: 'Inter, sans-serif', marginBottom: '14px' }}>
+                  <p style={{ color: '#374151', fontSize: '12px', lineHeight: 1.5, fontFamily: 'var(--font-sans), sans-serif', marginBottom: '14px' }}>
                     Tell us your vehicle model and we&apos;ll suggest the best accessory.
                   </p>
                   <a
@@ -244,7 +245,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 w-full justify-center py-2.5 text-xs font-bold transition-all duration-200 hover:opacity-90"
-                    style={{ background: '#25D366', color: '#fff', borderRadius: '10px', fontFamily: 'Inter, sans-serif' }}
+                    style={{ background: '#25D366', color: '#fff', borderRadius: '10px', fontFamily: 'var(--font-sans), sans-serif' }}
                   >
                     <MessageCircle className="h-4 w-4" />
                     Chat on WhatsApp
@@ -259,31 +260,17 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               <div
                 className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4"
                 style={{
-                  background: '#111811',
-                  border: '1px solid rgba(214,163,19,0.22)',
+                  background: '#FFFFFF',
+                  border: '1px solid #E5E7EB',
                   borderRadius: '12px',
                 }}
               >
                 {/* Search Input */}
-                <form action="/products" method="GET" className="relative flex-grow max-w-md">
-                  <input type="hidden" name="category" value={activeCategory} />
-                  <input type="hidden" name="sort" value={sortBy} />
-                  <input
-                    type="text"
-                    name="search"
-                    defaultValue={searchQuery}
-                    placeholder="Search accessories..."
-                    className="w-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#D6A313]/50"
-                    style={{
-                      background: '#0B0F0C',
-                      border: '1px solid rgba(214,163,19,0.15)',
-                      borderRadius: '10px',
-                      color: '#F8F3E8',
-                      fontFamily: 'Inter, sans-serif',
-                    }}
-                  />
-                  <Search className="absolute left-3 top-3 h-4 w-4" style={{ color: '#9AA397' }} />
-                </form>
+                <CatalogSearch
+                  activeCategory={activeCategory}
+                  sortBy={sortBy}
+                  initialSearchQuery={searchQuery}
+                />
 
                 {/* Sort + Mobile Category */}
                 <CatalogControls
@@ -295,7 +282,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               </div>
 
               {/* Product Count */}
-              <p style={{ color: '#9AA397', fontSize: '12px', fontFamily: 'Inter, sans-serif', paddingLeft: '4px' }}>
+              <p style={{ color: '#4B5563', fontSize: '12px', fontFamily: 'var(--font-sans), sans-serif', paddingLeft: '4px' }}>
                 Showing {products.length} {products.length === 1 ? 'product' : 'products'}
               </p>
 
@@ -310,20 +297,20 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 /* Empty State */
                 <div
                   className="flex flex-col items-center justify-center py-20 text-center space-y-4"
-                  style={{ background: '#111811', borderRadius: '12px', border: '1px solid rgba(214,163,19,0.18)' }}
+                  style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E5E7EB' }}
                 >
                   <MessageCircle className="h-10 w-10" style={{ color: '#D6A313' }} />
-                  <h3 style={{ color: '#F8F3E8', fontFamily: 'Inter, sans-serif', fontSize: '18px', fontWeight: 700 }}>
+                  <h3 style={{ color: '#111827', fontFamily: 'var(--font-display), sans-serif', fontSize: '18px', fontWeight: 700 }}>
                     No products found
                   </h3>
-                  <p style={{ color: '#9AA397', fontSize: '13px', maxWidth: '300px', lineHeight: 1.6, fontFamily: 'Inter, sans-serif' }}>
+                  <p style={{ color: '#4B5563', fontSize: '13px', maxWidth: '300px', lineHeight: 1.6, fontFamily: 'var(--font-sans), sans-serif' }}>
                     We couldn&apos;t find upgrades matching your criteria. Let us know on WhatsApp and we&apos;ll source it!
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 pt-3">
                     <Link
                       href="/products"
                       className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-bold"
-                      style={{ background: '#F8F3E8', color: '#0B0F0C', borderRadius: '10px', fontFamily: 'Inter, sans-serif' }}
+                      style={{ background: '#F3F4F6', color: '#111827', borderRadius: '10px', fontFamily: 'var(--font-sans), sans-serif' }}
                     >
                       Clear Filters
                     </Link>
@@ -332,7 +319,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold"
-                      style={{ background: '#25D366', color: '#fff', borderRadius: '10px', fontFamily: 'Inter, sans-serif' }}
+                      style={{ background: '#25D366', color: '#fff', borderRadius: '10px', fontFamily: 'var(--font-sans), sans-serif' }}
                     >
                       <MessageCircle className="h-3.5 w-3.5" />
                       Ask on WhatsApp
