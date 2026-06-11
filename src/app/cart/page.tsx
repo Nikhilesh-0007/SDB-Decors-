@@ -243,20 +243,14 @@ export default function CartPage() {
 
                 {/* CTAs */}
                 <div className="space-y-3 pt-2">
-                  <a
-                    href={`https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${buildWhatsAppMessage()}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      setTimeout(() => {
-                        clearCart();
-                      }, 500);
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-all hover:opacity-90 cursor-pointer"
+                  <Link
+                    href="/checkout"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-all hover:opacity-90 cursor-pointer text-center"
                     style={{ background: '#D6A313', color: '#FFFFFF', borderRadius: '12px', fontFamily: 'var(--font-sans), sans-serif' }}
                   >
-                    Proceed to Checkout <ArrowRight className="h-4 w-4" />
-                  </a>
+                    <span>Proceed to Checkout</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </div>
               </div>
             </div>

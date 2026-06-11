@@ -197,7 +197,8 @@ export default function Navbar() {
               <path d="M14 7l-3 5h5" />
             </svg>
             <span style={{ fontFamily: 'var(--font-display), sans-serif', fontSize: '18px', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>
-              SDB Auto <span style={{ color: '#D6A313' }}>Accessories</span>
+              <span>SDB Auto</span>
+              <span className="hidden sm:inline"> Accessories</span>
             </span>
           </Link>
 
@@ -272,17 +273,17 @@ export default function Navbar() {
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             {/* Search */}
-            <div ref={searchContainerRef} className="relative flex items-center">
+            <div ref={searchContainerRef} className="flex items-center">
               {showSearch ? (
-                <div className="relative">
-                  <form onSubmit={handleSearchSubmit} className="flex items-center overflow-hidden" style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '12px' }}>
+                <div className="absolute inset-x-0 top-0 h-full bg-white z-50 flex items-center px-4 md:relative md:inset-auto md:h-auto md:bg-transparent md:px-0">
+                  <form onSubmit={handleSearchSubmit} className="flex-grow flex items-center overflow-hidden" style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '12px' }}>
                     <input
                       ref={searchInputRef}
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search for car & bike accessories..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-transparent text-sm px-3 py-2 w-40 sm:w-48 focus:outline-none"
+                      className="bg-transparent text-sm px-3 py-2 w-full md:w-48 focus:outline-none"
                       style={{ color: '#111827', fontFamily: 'var(--font-sans), sans-serif' }}
                     />
                     <div className="flex items-center pr-1.5 shrink-0">
@@ -298,7 +299,7 @@ export default function Navbar() {
 
                   {/* Navbar Search Suggestions Dropdown */}
                   {showSearchDropdown && searchQuery.trim() && (
-                    <div className="absolute top-full right-0 mt-2 w-72 sm:w-80 bg-white border border-border rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="absolute top-full right-0 left-0 md:left-auto mt-2 w-full md:w-80 bg-white border border-border rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
                       {isSearchLoading && suggestions.length === 0 ? (
                         <div className="p-4 text-center text-xs text-muted flex items-center justify-center gap-2">
                           <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
@@ -403,50 +404,56 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Drawer */}
-      {isOpen && (
-        <div
-          className="md:hidden absolute top-full left-0 w-full p-6 flex flex-col gap-3 z-50"
-          style={{ background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}
-        >
-          <Link href="/" className="py-3 text-base font-medium transition-colors" style={{ color: pathname === '/' ? '#D6A313' : '#4B5563', borderBottom: '1px solid #F3F4F6', fontFamily: 'var(--font-sans), sans-serif' }}>Home</Link>
-          <Link href="/products" className="py-3 text-base font-medium transition-colors" style={{ color: pathname?.startsWith('/products') ? '#D6A313' : '#4B5563', borderBottom: '1px solid #F3F4F6', fontFamily: 'var(--font-sans), sans-serif' }}>Products</Link>
-          <div className="py-2">
-            <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#9CA3AF' }}>Categories</span>
-            <div className="grid grid-cols-2 gap-1">
-              {categories.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={`/products?category=${cat.slug}`}
-                  className="text-sm py-1.5 transition-colors"
-                  style={{ color: '#4B5563', fontFamily: 'var(--font-sans), sans-serif' }}
-                >
-                  {cat.name}
-                </Link>
-              ))}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="md:hidden absolute top-full left-0 w-full p-6 flex flex-col gap-3 z-50 overflow-hidden"
+            style={{ background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}
+          >
+            <Link href="/" className="py-3 text-base font-medium transition-colors" style={{ color: pathname === '/' ? '#D6A313' : '#4B5563', borderBottom: '1px solid #F3F4F6', fontFamily: 'var(--font-sans), sans-serif' }}>Home</Link>
+            <Link href="/products" className="py-3 text-base font-medium transition-colors" style={{ color: pathname?.startsWith('/products') ? '#D6A313' : '#4B5563', borderBottom: '1px solid #F3F4F6', fontFamily: 'var(--font-sans), sans-serif' }}>Products</Link>
+            <div className="py-2">
+              <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#9CA3AF' }}>Categories</span>
+              <div className="grid grid-cols-2 gap-1">
+                {categories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={`/products?category=${cat.slug}`}
+                    className="text-sm py-1.5 transition-colors"
+                    style={{ color: '#4B5563', fontFamily: 'var(--font-sans), sans-serif' }}
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-          <Link href="/contact" className="py-3 text-base font-medium transition-colors" style={{ color: pathname === '/contact' ? '#D6A313' : '#4B5563', borderBottom: '1px solid #F3F4F6', fontFamily: 'var(--font-sans), sans-serif' }}>Contact</Link>
-          <div className="flex gap-3 pt-2">
-            <Link
-              href="/cart"
-              className="flex-1 flex items-center justify-center py-3 text-sm font-semibold"
-              style={{ background: '#D6A313', color: '#FFFFFF', borderRadius: '12px', fontFamily: 'var(--font-sans), sans-serif' }}
-            >
-              View Cart ({cartCount})
-            </Link>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-semibold"
-              style={{ background: '#25D366', color: '#fff', borderRadius: '12px', fontFamily: 'var(--font-sans), sans-serif' }}
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </a>
-          </div>
-        </div>
-      )}
+            <Link href="/contact" className="py-3 text-base font-medium transition-colors" style={{ color: pathname === '/contact' ? '#D6A313' : '#4B5563', borderBottom: '1px solid #F3F4F6', fontFamily: 'var(--font-sans), sans-serif' }}>Contact</Link>
+            <div className="flex gap-3 pt-2">
+              <Link
+                href="/cart"
+                className="flex-1 flex items-center justify-center py-3 text-sm font-semibold"
+                style={{ background: '#D6A313', color: '#FFFFFF', borderRadius: '12px', fontFamily: 'var(--font-sans), sans-serif' }}
+              >
+                View Cart ({cartCount})
+              </Link>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-semibold"
+                style={{ background: '#25D366', color: '#fff', borderRadius: '12px', fontFamily: 'var(--font-sans), sans-serif' }}
+              >
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Add to Cart Flying Items overlays */}
       <AnimatePresence>
         {flyingItems.map((item) => (
