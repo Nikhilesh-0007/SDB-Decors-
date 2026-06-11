@@ -188,15 +188,15 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#D6A313" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#D6A313" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
               <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
               <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2" />
               <path d="M9 17h6" />
               <path d="M14 7l-3 5h5" />
             </svg>
-            <span style={{ fontFamily: 'var(--font-display), sans-serif', fontSize: '18px', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>
+            <span className="text-sm sm:text-base md:text-lg font-bold tracking-tight shrink-0" style={{ fontFamily: 'var(--font-display), sans-serif', color: '#111827' }}>
               <span>SDB Auto</span>
               <span className="hidden sm:inline"> Accessories</span>
             </span>
@@ -271,7 +271,7 @@ export default function Navbar() {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Search */}
             <div ref={searchContainerRef} className="flex items-center">
               {showSearch ? (
@@ -347,11 +347,11 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => setShowSearch(true)}
-                  className="p-2.5 cursor-pointer transition-colors duration-200"
+                  className="p-1.5 sm:p-2.5 cursor-pointer transition-colors duration-200"
                   style={{ color: '#4B5563' }}
                   aria-label="Search"
                 >
-                  <Search className="h-5 w-5" />
+                  <Search className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
                 </button>
               )}
             </div>
@@ -360,11 +360,11 @@ export default function Navbar() {
             <Link
               ref={cartIconRef}
               href="/cart"
-              className="relative p-2.5 transition-colors duration-200"
+              className="relative p-1.5 sm:p-2.5 transition-colors duration-200"
               style={{ color: '#4B5563' }}
               aria-label="Cart"
             >
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
               {cartCount > 0 && (
                 <motion.span
                   animate={bounceCart ? { scale: [1, 1.45, 0.85, 1.15, 1] } : {}}
@@ -393,11 +393,11 @@ export default function Navbar() {
             {/* Mobile Menu */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2.5 md:hidden cursor-pointer"
+              className="p-1.5 sm:p-2.5 md:hidden cursor-pointer"
               style={{ color: '#4B5563' }}
               aria-label="Toggle Menu"
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? <X className="h-[18px] w-[18px] sm:h-5 sm:w-5" /> : <Menu className="h-[18px] w-[18px] sm:h-5 sm:w-5" />}
             </button>
           </div>
         </div>
