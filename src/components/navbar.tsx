@@ -196,9 +196,8 @@ export default function Navbar() {
               <path d="M9 17h6" />
               <path d="M14 7l-3 5h5" />
             </svg>
-            <span className="text-sm sm:text-base md:text-lg font-bold tracking-tight shrink-0" style={{ fontFamily: 'var(--font-display), sans-serif', color: '#111827' }}>
-              <span>SDB Auto</span>
-              <span className="hidden sm:inline"> Accessories</span>
+            <span className="text-[13px] xs:text-sm sm:text-base md:text-lg font-bold tracking-tight shrink-0" style={{ fontFamily: 'var(--font-display), sans-serif', color: '#111827' }}>
+              SDB Auto <span style={{ color: '#D6A313' }}>Accessories</span>
             </span>
           </Link>
 
