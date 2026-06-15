@@ -15,6 +15,7 @@ export interface ProductCardProps {
     price: number;
     images: string[];
     in_stock: boolean;
+    stock?: number;
     category_id?: string;
     categories?: {
       name: string;
@@ -31,10 +32,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   const cartItem = cartItems.find((item) => item.product_id === product.id);
   const qty = cartItem?.qty || 0;
 
+  const stock = product.stock !== undefined && product.stock !== null ? product.stock : (product.in_stock ? 10 : 0);
+  const isOutOfStock = stock <= 0 || !product.in_stock;
+  const maxQty = Math.min(20, stock);
+
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!product.in_stock || isSuccess) return;
+    if (isOutOfStock || isSuccess) return;
 
     // Bounding Client Rect for flying animation
     const container = e.currentTarget.closest('.product-card-container');
@@ -63,6 +68,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       price: Number(product.price),
       image: mainImage,
       slug: product.slug,
+      category_id: product.category_id,
     });
 
     setTimeout(() => {
@@ -73,7 +79,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleIncrease = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    updateQuantity(product.id, qty + 1);
+    if (qty < maxQty) {
+      updateQuantity(product.id, qty + 1);
+    }
   };
 
   const handleDecrease = (e: React.MouseEvent) => {
@@ -128,7 +136,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.categories.name}
           </span>
         )}
-        {!product.in_stock && (
+        {isOutOfStock && (
           <div className="absolute inset-0 bg-white/85 backdrop-blur-[1px] flex items-center justify-center z-10">
             <span style={{ background: '#FFFFFF', color: '#111827', fontSize: '11px', fontWeight: 700, padding: '6px 14px', borderRadius: '8px', fontFamily: 'var(--font-sans), sans-serif', border: '1px solid #E5E7EB' }}>
               SOLD OUT
@@ -149,17 +157,27 @@ export default function ProductCard({ product }: ProductCardProps) {
           <p style={{ color: '#111827', fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-display), sans-serif' }}>
             {formatCurrency(Number(product.price))}
           </p>
-          {product.in_stock && (
+          {isOutOfStock ? (
+            <span className="flex items-center gap-1" style={{ color: '#ef4444', fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-sans), sans-serif' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#ef4444' }} />
+              Out of Stock
+            </span>
+          ) : stock <= 5 ? (
+            <span className="flex items-center gap-1" style={{ color: '#f59e0b', fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-sans), sans-serif' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#f59e0b' }} />
+              Low Stock ({stock})
+            </span>
+          ) : (
             <span className="flex items-center gap-1" style={{ color: '#10b981', fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-sans), sans-serif' }}>
               <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#10b981' }} />
-              In Stock
+              Available
             </span>
           )}
         </div>
       </div>
 
       {/* Add to Cart / Quantity Stepper */}
-      {(qty > 0 && !isSuccess) ? (
+      {(qty > 0 && !isSuccess && !isOutOfStock) ? (
         <div
           className="w-full flex items-center justify-between"
           style={{
@@ -182,7 +200,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           </span>
           <button
             onClick={handleIncrease}
-            className="flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200"
+            disabled={qty >= maxQty}
+            className="flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200 disabled:opacity-45"
             style={{ width: '52px', height: '46px', color: '#D6A313' }}
             aria-label="Increase quantity"
           >
@@ -192,17 +211,17 @@ export default function ProductCard({ product }: ProductCardProps) {
       ) : (
         <button
           onClick={handleAdd}
-          disabled={!product.in_stock}
+          disabled={isOutOfStock}
           className={cn(
             'w-full flex items-center justify-center gap-2 cursor-pointer transition-all duration-200',
-            !product.in_stock && 'cursor-not-allowed',
+            isOutOfStock && 'cursor-not-allowed',
             isSuccess && 'bg-emerald-600 text-white'
           )}
           style={{
             background: isSuccess
               ? '#10B981'
-              : (product.in_stock ? '#D6A313' : '#F3F4F6'),
-            color: (product.in_stock || isSuccess) ? '#FFFFFF' : '#9CA3AF',
+              : (!isOutOfStock ? '#D6A313' : '#F3F4F6'),
+            color: (!isOutOfStock || isSuccess) ? '#FFFFFF' : '#9CA3AF',
             fontWeight: 700,
             fontSize: '13px',
             fontFamily: 'var(--font-sans), sans-serif',
@@ -211,8 +230,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             borderRadius: '0 0 12px 12px',
             minHeight: '46px',
           }}
-          onMouseEnter={(e) => { if (product.in_stock && !isSuccess) e.currentTarget.style.background = '#b88b0f'; }}
-          onMouseLeave={(e) => { if (product.in_stock && !isSuccess) e.currentTarget.style.background = '#D6A313'; }}
+          onMouseEnter={(e) => { if (!isOutOfStock && !isSuccess) e.currentTarget.style.background = '#b88b0f'; }}
+          onMouseLeave={(e) => { if (!isOutOfStock && !isSuccess) e.currentTarget.style.background = '#D6A313'; }}
           aria-label={isSuccess ? "Added to Cart" : "Add to Cart"}
         >
           {isSuccess ? (
@@ -223,7 +242,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           ) : (
             <>
               <ShoppingCart className="h-4 w-4" />
-              <span>{!product.in_stock ? 'Sold Out' : 'Add to Cart'}</span>
+              <span>{isOutOfStock ? 'Sold Out' : 'Add to Cart'}</span>
             </>
           )}
         </button>

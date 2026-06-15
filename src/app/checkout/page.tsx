@@ -1,19 +1,91 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, ArrowRight, User, Phone, Mail, CheckCircle2, ChevronRight } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
+import { ShoppingBag, ArrowLeft, ArrowRight, User, Phone, Mail, CheckCircle2, ChevronRight, Tag } from 'lucide-react';
+import { useCart, validateCoupon } from '@/context/CartContext';
 import { formatCurrency } from '@/lib/utils';
 import confetti from 'canvas-confetti';
+import { supabase } from '@/lib/supabase';
 
 export default function CheckoutPage() {
-  const { cartItems, total, subtotal, discountAmount, coupon, clearCart } = useCart();
+  const { cartItems, total, subtotal, discountAmount, coupon, applyCoupon, removeCoupon, clearCart } = useCart();
   
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [couponError, setCouponError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState('');
+  const [coupons, setCoupons] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadCoupons() {
+      try {
+        const { data } = await supabase
+          .from('coupons')
+          .select('*')
+          .eq('is_active', true);
+        if (data) setCoupons(data);
+      } catch (err) {
+        console.error('Failed to load coupons:', err);
+      }
+    }
+    loadCoupons();
+  }, []);
+
+  const checkCustomerCouponUsage = async (couponCode: string, phone: string): Promise<string | null> => {
+    const current = coupons.find(c => c.code === couponCode);
+    if (!current || !current.usage_limit_per_customer) return null;
+
+    try {
+      const { count, error } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_phone', phone.trim())
+        .eq('coupon_code', couponCode);
+        
+      if (error) throw error;
+      
+      const ordersCount = count || 0;
+      if (ordersCount >= current.usage_limit_per_customer) {
+        return `You have already used this coupon ${ordersCount} time(s). Limit is ${current.usage_limit_per_customer} per customer.`;
+      }
+    } catch (err) {
+      console.error('Failed to verify customer usage limit:', err);
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    async function runLiveValidation() {
+      if (coupon) {
+        const currentCouponMeta = coupons.find(c => c.code === coupon.code);
+        if (currentCouponMeta) {
+          const errorMsg = validateCoupon(currentCouponMeta, subtotal, cartItems);
+          if (errorMsg) {
+            removeCoupon();
+            setCouponError(errorMsg);
+          } else {
+            // Check customer limit if phone is filled in
+            if (currentCouponMeta.usage_limit_per_customer && formData.phone.trim().length >= 10) {
+              const userLimitError = await checkCustomerCouponUsage(coupon.code, formData.phone);
+              if (userLimitError) {
+                removeCoupon();
+                setCouponError(userLimitError);
+              } else {
+                setCouponError('');
+              }
+            } else {
+              setCouponError('');
+            }
+          }
+        }
+      } else {
+        setCouponError('');
+      }
+    }
+    runLiveValidation();
+  }, [cartItems, subtotal, coupon, coupons, formData.phone, removeCoupon]);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
 
@@ -33,9 +105,7 @@ export default function CheckoutPage() {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email Address is required';
-    } else if (!emailRegex.test(formData.email)) {
+    if (formData.email.trim() && !emailRegex.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
@@ -48,7 +118,7 @@ export default function CheckoutPage() {
     msg += `👤 *Customer details:*\n`;
     msg += `• *Name:* ${name.trim()}\n`;
     msg += `• *Phone:* ${phone.trim()}\n`;
-    msg += `• *Email:* ${email.trim()}\n\n`;
+    msg += `• *Email:* ${email.trim() || 'Not provided'}\n\n`;
 
     msg += `🛒 *Items ordered:*\n`;
     cartItems.forEach((item, i) => {
@@ -66,9 +136,97 @@ export default function CheckoutPage() {
     return encodeURIComponent(msg);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
+    // Verify coupon constraints before placing the order
+    if (coupon) {
+      const current = coupons.find(c => c.code === coupon.code);
+      if (current) {
+        const errorMsg = validateCoupon(current, subtotal, cartItems);
+        if (errorMsg) {
+          removeCoupon();
+          setCouponError(errorMsg);
+          alert(errorMsg);
+          return;
+        }
+
+        // Verify customer limit
+        if (current.usage_limit_per_customer && formData.phone.trim()) {
+          const userLimitError = await checkCustomerCouponUsage(coupon.code, formData.phone);
+          if (userLimitError) {
+            removeCoupon();
+            setCouponError(userLimitError);
+            alert(userLimitError);
+            return;
+          }
+        }
+      }
+    }
+
+    // 1. Decrement stock for each item in supabase
+    try {
+      for (const item of cartItems) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('id', item.product_id)
+          .single();
+          
+        if (product) {
+          const currentStock = product.stock !== undefined && product.stock !== null ? product.stock : 10;
+          const newStock = Math.max(0, currentStock - item.qty);
+          await supabase
+            .from('products')
+            .update({ 
+              stock: newStock,
+              in_stock: newStock > 0
+            })
+            .eq('id', item.product_id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to decrement stock:', err);
+    }
+
+    // 2. Insert order record into database
+    try {
+      const orderPayload = {
+        customer_name: formData.name.trim(),
+        customer_phone: formData.phone.trim(),
+        customer_email: formData.email.trim() || 'Not provided',
+        items: cartItems.map(item => ({
+          product_id: item.product_id,
+          name: item.name,
+          qty: item.qty,
+          price: item.price
+        })),
+        coupon_code: coupon ? coupon.code : null,
+        total_amount: total,
+        whatsapp_sent: true
+      };
+      
+      await supabase.from('orders').insert(orderPayload);
+
+      // Increment coupon used_count in Supabase
+      if (coupon) {
+        const { data: currentCoupon } = await supabase
+          .from('coupons')
+          .select('used_count')
+          .eq('code', coupon.code)
+          .single();
+        if (currentCoupon) {
+          const nextCount = (currentCoupon.used_count || 0) + 1;
+          await supabase
+            .from('coupons')
+            .update({ used_count: nextCount })
+            .eq('code', coupon.code);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to log order:', err);
+    }
 
     // Trigger confetti explosion
     try {
@@ -298,6 +456,66 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                 ))}
+              </div>
+
+              {/* Coupon Dropdown Selector */}
+              <div className="pt-4 border-t border-gray-100 space-y-2">
+                <label className="text-xs font-bold text-gray-700 tracking-wider uppercase block">
+                  Select Promo Coupon
+                </label>
+                <select
+                  value={coupon ? coupon.code : ''}
+                  onChange={async (e) => {
+                    const selected = coupons.find(c => c.code === e.target.value);
+                    if (selected) {
+                      const errorMsg = validateCoupon(selected, subtotal, cartItems);
+                      if (errorMsg) {
+                        removeCoupon();
+                        setCouponError(errorMsg);
+                      } else {
+                        // Check phone limit immediately if phone is filled in
+                        if (selected.usage_limit_per_customer && formData.phone.trim().length >= 10) {
+                          const userLimitError = await checkCustomerCouponUsage(selected.code, formData.phone);
+                          if (userLimitError) {
+                            removeCoupon();
+                            setCouponError(userLimitError);
+                            return;
+                          }
+                        }
+                        applyCoupon({
+                          id: selected.id,
+                          code: selected.code,
+                          discount_type: selected.discount_type,
+                          discount_value: Number(selected.discount_value),
+                          min_order_amount: selected.min_order_amount,
+                          max_discount_amount: selected.max_discount_amount,
+                          start_date: selected.start_date,
+                          end_date: selected.end_date,
+                          usage_limit: selected.usage_limit,
+                          used_count: selected.used_count,
+                          usage_limit_per_customer: selected.usage_limit_per_customer,
+                          allow_combine: selected.allow_combine,
+                          applicable_product_ids: selected.applicable_product_ids,
+                          applicable_category_ids: selected.applicable_category_ids
+                        });
+                        setCouponError('');
+                      }
+                    } else {
+                      removeCoupon();
+                      setCouponError('');
+                    }
+                  }}
+                  className="w-full px-3 py-2.5 text-xs focus:outline-none bg-gray-50 border border-gray-200 rounded-lg text-gray-800"
+                  style={{ fontFamily: 'var(--font-sans), sans-serif' }}
+                >
+                  <option value="">No Coupon (Select to apply)</option>
+                  {coupons.map(c => (
+                    <option key={c.id} value={c.code}>
+                      {c.code} — {c.discount_type === 'percent' ? `${c.discount_value}%` : `₹${c.discount_value}`} Off
+                    </option>
+                  ))}
+                </select>
+                {couponError && <p className="text-xs font-medium mt-1.5" style={{ color: '#ef4444' }}>{couponError}</p>}
               </div>
 
               {/* Pricing breakdown */}

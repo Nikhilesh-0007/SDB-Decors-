@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Trash2, Minus, Plus, ShoppingCart, ArrowRight, Tag, X, Package } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
+import { useCart, validateCoupon } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 
@@ -15,41 +15,47 @@ export default function CartPage() {
     subtotal, discountAmount, total, clearCart,
   } = useCart();
 
-  const [couponInput, setCouponInput] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState(coupon ? `Coupon "${coupon.code}" applied!` : '');
   const [couponError, setCouponError] = useState('');
-  const [couponSuccess, setCouponSuccess] = useState('');
-  const [isValidating, setIsValidating] = useState(false);
+  const [coupons, setCoupons] = useState<any[]>([]);
 
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919014868451';
-
-  const handleApplyCoupon = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCouponError('');
-    setCouponSuccess('');
-    if (!couponInput.trim()) { setCouponError('Please enter a coupon code.'); return; }
-
-    setIsValidating(true);
-    try {
-      const codeToQuery = couponInput.trim().toUpperCase();
-      const { data, error } = await supabase
-        .from('coupons')
-        .select('id, code, discount_type, discount_value, is_active')
-        .eq('code', codeToQuery)
-        .eq('is_active', true)
-        .single();
-
-      if (error || !data) {
-        setCouponError('Invalid or inactive coupon code.');
-      } else {
-        applyCoupon({ id: data.id, code: data.code, discount_type: data.discount_type as 'percent' | 'flat', discount_value: Number(data.discount_value) });
-        setCouponSuccess(`Coupon "${data.code}" applied!`);
-        setCouponInput('');
+  useEffect(() => {
+    async function loadCoupons() {
+      try {
+        const { data } = await supabase
+          .from('coupons')
+          .select('*')
+          .eq('is_active', true);
+        if (data) setCoupons(data);
+      } catch (err) {
+        console.error('Failed to load coupons:', err);
       }
-    } catch { setCouponError('Failed to validate coupon.'); }
-    finally { setIsValidating(false); }
-  };
+    }
+    loadCoupons();
+  }, []);
 
-  const handleRemoveCoupon = () => { removeCoupon(); setCouponSuccess(''); setCouponError(''); };
+  useEffect(() => {
+    if (coupon) {
+      const currentCouponMeta = coupons.find(c => c.code === coupon.code);
+      if (currentCouponMeta) {
+        const errorMsg = validateCoupon(currentCouponMeta, subtotal, cartItems);
+        if (errorMsg) {
+          removeCoupon();
+          setCouponSuccess('');
+          setCouponError(errorMsg);
+        } else {
+          setCouponError('');
+        }
+      }
+    } else {
+      setCouponError('');
+    }
+  }, [cartItems, subtotal, coupon, coupons, removeCoupon]);
+
+  const handleRemoveCoupon = () => {
+    removeCoupon();
+    setCouponSuccess('');
+  };
 
   // WhatsApp order message
   const buildWhatsAppMessage = () => {
@@ -203,42 +209,59 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Coupon */}
-                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
-                  {coupon ? (
-                    <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '10px' }}>
-                      <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#16a34a' }}>
-                        <Tag className="h-3.5 w-3.5" />
-                        {coupon.code} ({coupon.discount_type === 'percent' ? `${coupon.discount_value}%` : formatCurrency(coupon.discount_value)} off)
-                      </span>
-                      <button onClick={handleRemoveCoupon} className="cursor-pointer" style={{ color: '#16a34a' }}><X className="h-4 w-4" /></button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleApplyCoupon} className="space-y-2">
-                      <label className="text-xs font-medium block" style={{ color: '#4B5563', fontFamily: 'var(--font-sans), sans-serif' }}>Promo Code</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="E.g. WELCOME10"
-                          value={couponInput}
-                          onChange={(e) => setCouponInput(e.target.value)}
-                          disabled={isValidating}
-                          className="flex-grow px-3 py-2.5 text-xs focus:outline-none uppercase"
-                          style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '10px', color: '#111827', fontFamily: 'var(--font-sans), sans-serif' }}
-                        />
-                        <button
-                          type="submit"
-                          disabled={isValidating}
-                          className="px-4 py-2.5 text-xs font-bold cursor-pointer shrink-0 transition-colors hover:opacity-90 disabled:opacity-50"
-                          style={{ background: '#D6A313', color: '#FFFFFF', borderRadius: '10px', fontFamily: 'var(--font-sans), sans-serif' }}
-                        >
-                          {isValidating ? '...' : 'Apply'}
-                        </button>
-                      </div>
-                      {couponError && <p className="text-xs font-medium" style={{ color: '#ef4444' }}>{couponError}</p>}
-                      {couponSuccess && <p className="text-xs font-medium" style={{ color: '#16a34a' }}>{couponSuccess}</p>}
-                    </form>
-                  )}
+                {/* Coupon Selection Dropdown */}
+                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px' }} className="space-y-2">
+                  <label className="text-xs font-medium block" style={{ color: '#4B5563', fontFamily: 'var(--font-sans), sans-serif' }}>
+                    Available Coupons
+                  </label>
+                  <select
+                    value={coupon ? coupon.code : ''}
+                    onChange={(e) => {
+                      const selected = coupons.find(c => c.code === e.target.value);
+                      if (selected) {
+                        const errorMsg = validateCoupon(selected, subtotal, cartItems);
+                        if (errorMsg) {
+                          removeCoupon();
+                          setCouponSuccess('');
+                          setCouponError(errorMsg);
+                        } else {
+                          applyCoupon({
+                            id: selected.id,
+                            code: selected.code,
+                            discount_type: selected.discount_type,
+                            discount_value: Number(selected.discount_value),
+                            min_order_amount: selected.min_order_amount,
+                            max_discount_amount: selected.max_discount_amount,
+                            start_date: selected.start_date,
+                            end_date: selected.end_date,
+                            usage_limit: selected.usage_limit,
+                            used_count: selected.used_count,
+                            usage_limit_per_customer: selected.usage_limit_per_customer,
+                            allow_combine: selected.allow_combine,
+                            applicable_product_ids: selected.applicable_product_ids,
+                            applicable_category_ids: selected.applicable_category_ids
+                          });
+                          setCouponSuccess(`Coupon "${selected.code}" applied!`);
+                          setCouponError('');
+                        }
+                      } else {
+                        removeCoupon();
+                        setCouponSuccess('');
+                        setCouponError('');
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 text-xs focus:outline-none bg-gray-50 border border-gray-200 rounded-lg text-gray-800"
+                    style={{ fontFamily: 'var(--font-sans), sans-serif' }}
+                  >
+                    <option value="">Select a coupon...</option>
+                    {coupons.map(c => (
+                      <option key={c.id} value={c.code}>
+                        {c.code} — {c.discount_type === 'percent' ? `${c.discount_value}%` : `₹${c.discount_value}`} Off
+                      </option>
+                    ))}
+                  </select>
+                  {couponSuccess && <p className="text-xs font-medium mt-1.5" style={{ color: '#16a34a' }}>{couponSuccess}</p>}
+                  {couponError && <p className="text-xs font-medium mt-1.5" style={{ color: '#ef4444' }}>{couponError}</p>}
                 </div>
 
                 {/* CTAs */}

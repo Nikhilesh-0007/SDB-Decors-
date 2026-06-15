@@ -15,6 +15,7 @@ interface ProductDetailClientProps {
     price: number;
     images: string[];
     in_stock: boolean;
+    stock?: number;
     category_id: string;
     categories?: {
       name: string;
@@ -33,15 +34,19 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     ? product.images
     : ['https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=800'];
 
+  const stock = product.stock !== undefined && product.stock !== null ? product.stock : (product.in_stock ? 10 : 0);
+  const isOutOfStock = stock <= 0 || !product.in_stock;
+  const maxQty = Math.min(20, stock);
+
   const handleQuantityChange = (val: number) => {
     const nextVal = quantity + val;
-    if (nextVal >= 1 && nextVal <= 20) {
+    if (nextVal >= 1 && nextVal <= maxQty) {
       setQuantity(nextVal);
     }
   };
 
   const handleAddToCart = () => {
-    if (!product.in_stock) return;
+    if (isOutOfStock) return;
 
     // Bounding Client Rect for flying animation
     const imgEl = document.querySelector('.product-gallery-container img');
@@ -69,6 +74,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       price: Number(product.price),
       image: images[0],
       slug: product.slug,
+      category_id: product.category_id,
     }, quantity);
 
     setIsAdded(true);
@@ -145,19 +151,23 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
         {/* Availability Details */}
         <div className="pt-2">
-          {!product.in_stock ? (
+          {isOutOfStock ? (
             <span className="inline-flex items-center rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
-              Currently Out of Stock
+              Out of Stock
+            </span>
+          ) : stock <= 5 ? (
+            <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700">
+              ⚠️ Low Stock (Only {stock} left)
             </span>
           ) : (
             <span className="inline-flex items-center rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs font-semibold text-green-700">
-              ✓ In Stock & Ready to Ship
+              ✓ Available
             </span>
           )}
         </div>
 
         {/* Action Controls */}
-        {product.in_stock && (
+        {!isOutOfStock && (
           <div className="pt-6 border-t border-border space-y-6">
             {/* Quantity select */}
             <div className="flex items-center space-x-4">
@@ -175,7 +185,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 <button
                   type="button"
                   onClick={() => handleQuantityChange(1)}
-                  disabled={quantity >= 20}
+                  disabled={quantity >= maxQty}
                   className="p-2 text-muted hover:text-dark disabled:opacity-30 transition-colors cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />

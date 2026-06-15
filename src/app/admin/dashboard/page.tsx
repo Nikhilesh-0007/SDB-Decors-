@@ -46,13 +46,30 @@ export default function AdminDashboard() {
   const [showCouponModal, setShowCouponModal] = useState(false);
   
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [usageStats, setUsageStats] = useState<any>(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState(false);
 
   // Form Fields
   const [productForm, setProductForm] = useState({
-    name: '', slug: '', description: '', price: 0, category_id: '', images: [''], in_stock: true
+    name: '', slug: '', description: '', price: 0, category_id: '', images: [''], in_stock: true, stock: 10
   });
   const [categoryForm, setCategoryForm] = useState({ name: '', slug: '', image_url: '' });
-  const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percent' as 'percent' | 'flat', discount_value: 0, is_active: true });
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    discount_type: 'percent' as 'percent' | 'flat',
+    discount_value: 0,
+    is_active: true,
+    min_order_amount: 0,
+    max_discount_amount: '' as string | number,
+    start_date: '',
+    end_date: '',
+    usage_limit: '' as string | number,
+    usage_limit_per_customer: '' as string | number,
+    applicable_product_ids: [] as string[],
+    applicable_category_ids: [] as string[]
+  });
 
   // Check Auth
   useEffect(() => {
@@ -106,12 +123,43 @@ export default function AdminDashboard() {
         orders: loadedOrds.length
       });
 
+      // Load usage statistics
+      fetchUsageStats();
+
     } catch (e) {
       console.error('Error loading dashboard data:', e);
     } finally {
       setLoading(false);
     }
   }
+
+  async function fetchUsageStats() {
+    setUsageLoading(true);
+    setUsageError(false);
+    try {
+      const { data, error } = await supabase.rpc('get_supabase_usage');
+      if (error) throw error;
+      if (data) {
+        setUsageStats(data);
+      } else {
+        setUsageError(true);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch resource usage statistics:', err);
+      setUsageError(true);
+    } finally {
+      setUsageLoading(false);
+    }
+  }
+
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  };
 
   // Logout Handler
   const handleLogout = () => {
@@ -122,6 +170,10 @@ export default function AdminDashboard() {
   // Hero CRUD
   const handleHeroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!heroForm.image_url) {
+      alert('Please upload a banner image.');
+      return;
+    }
     try {
       const payload = {
         heading: heroForm.heading,
@@ -206,7 +258,8 @@ export default function AdminDashboard() {
         price: Number(productForm.price),
         category_id: productForm.category_id || null,
         images: productForm.images.filter(img => img.trim() !== ''),
-        in_stock: productForm.in_stock
+        stock: Number(productForm.stock),
+        in_stock: Number(productForm.stock) > 0
       };
 
       if (editingId) {
@@ -223,7 +276,7 @@ export default function AdminDashboard() {
       }
       setShowProductModal(false);
       setEditingId(null);
-      setProductForm({ name: '', slug: '', description: '', price: 0, category_id: '', images: [''], in_stock: true });
+      setProductForm({ name: '', slug: '', description: '', price: 0, category_id: '', images: [''], in_stock: true, stock: 10 });
       loadAllData();
     } catch (err: any) {
       alert(`Failed to save product: ${err.message}`);
@@ -243,9 +296,11 @@ export default function AdminDashboard() {
 
   const toggleProductStock = async (id: string, currentStatus: boolean) => {
     try {
+      const nextStatus = !currentStatus;
+      const nextStock = nextStatus ? 10 : 0;
       // Optimistic update
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, in_stock: !currentStatus } : p));
-      const { error } = await supabase.from('products').update({ in_stock: !currentStatus }).eq('id', id);
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, in_stock: nextStatus, stock: nextStock } : p));
+      const { error } = await supabase.from('products').update({ in_stock: nextStatus, stock: nextStock }).eq('id', id);
       if (error) throw error;
     } catch (err: any) {
       alert(`Stock toggle failed: ${err.message}`);
@@ -261,7 +316,16 @@ export default function AdminDashboard() {
         code: couponForm.code.trim().toUpperCase(),
         discount_type: couponForm.discount_type,
         discount_value: Number(couponForm.discount_value),
-        is_active: couponForm.is_active
+        is_active: couponForm.is_active,
+        min_order_amount: couponForm.min_order_amount ? Number(couponForm.min_order_amount) : 0,
+        max_discount_amount: couponForm.max_discount_amount ? Number(couponForm.max_discount_amount) : null,
+        start_date: couponForm.start_date ? new Date(couponForm.start_date).toISOString() : null,
+        end_date: couponForm.end_date ? new Date(couponForm.end_date).toISOString() : null,
+        usage_limit: couponForm.usage_limit ? Number(couponForm.usage_limit) : null,
+        usage_limit_per_customer: couponForm.usage_limit_per_customer ? Number(couponForm.usage_limit_per_customer) : null,
+        allow_combine: false,
+        applicable_product_ids: couponForm.applicable_product_ids.length > 0 ? couponForm.applicable_product_ids : null,
+        applicable_category_ids: couponForm.applicable_category_ids.length > 0 ? couponForm.applicable_category_ids : null
       };
 
       if (editingId) {
@@ -273,7 +337,20 @@ export default function AdminDashboard() {
       }
       setShowCouponModal(false);
       setEditingId(null);
-      setCouponForm({ code: '', discount_type: 'percent', discount_value: 0, is_active: true });
+      setCouponForm({
+        code: '',
+        discount_type: 'percent',
+        discount_value: 0,
+        is_active: true,
+        min_order_amount: 0,
+        max_discount_amount: '',
+        start_date: '',
+        end_date: '',
+        usage_limit: '',
+        usage_limit_per_customer: '',
+        applicable_product_ids: [],
+        applicable_category_ids: []
+      });
       loadAllData();
     } catch (err: any) {
       alert(`Failed to save coupon: ${err.message}`);
@@ -328,6 +405,46 @@ export default function AdminDashboard() {
       nextImgs[index] = val;
       return { ...prev, images: nextImgs };
     });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setUploading(true);
+    try {
+      const file = files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('sdb-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('sdb-images')
+        .getPublicUrl(filePath);
+
+      setProductForm(prev => {
+        const filtered = prev.images.filter(img => img.trim() !== '');
+        return {
+          ...prev,
+          images: [...filtered, publicUrl]
+        };
+      });
+    } catch (err: any) {
+      alert(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (!authorized) return null;
@@ -498,6 +615,126 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
+
+                {/* Supabase Resource Usage Monitoring Card */}
+                <div className="bg-white rounded-xl border border-border/60 p-5 shadow-sm space-y-5">
+                  <div className="flex justify-between items-center pb-2 border-b border-border/40">
+                    <div>
+                      <h3 className="font-bold text-dark text-base">Supabase Resource Usage Monitor</h3>
+                      <p className="text-xs text-muted">Current PostgreSQL database and file storage consumption.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={fetchUsageStats}
+                      disabled={usageLoading}
+                      className="flex items-center space-x-1 px-3 py-1.5 bg-bg hover:bg-bg/80 border border-border rounded-lg text-xs font-bold text-dark cursor-pointer disabled:opacity-50"
+                    >
+                      {usageLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 text-muted animate-spin" />
+                      ) : (
+                        <span className="text-xs">🔄</span>
+                      )}
+                      <span>{usageLoading ? 'Refreshing...' : 'Refresh'}</span>
+                    </button>
+                  </div>
+
+                  {usageError ? (
+                    <div className="text-center py-6 text-sm text-muted font-medium bg-bg/50 rounded-lg border border-border/40">
+                      Usage statistics unavailable
+                    </div>
+                  ) : !usageStats ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                      <span className="ml-2.5 text-xs text-muted">Retrieving resource statistics...</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Database Size Monitor */}
+                      {(() => {
+                        const dbUsed = usageStats.db_size_bytes || 0;
+                        const dbLimit = usageStats.db_limit_bytes || 524288000;
+                        const dbPct = Math.min(100, parseFloat(((dbUsed / dbLimit) * 100).toFixed(2)));
+                        
+                        let colorClass = 'bg-emerald-500';
+                        let badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                        let badgeText = 'Normal';
+                        if (dbPct >= 95) {
+                          colorClass = 'bg-red-500';
+                          badgeColor = 'bg-red-50 text-red-700 border-red-200';
+                          badgeText = 'Critical';
+                        } else if (dbPct >= 80) {
+                          colorClass = 'bg-amber-500';
+                          badgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                          badgeText = 'Warning';
+                        }
+
+                        return (
+                          <div className="space-y-2.5">
+                            <div className="flex justify-between items-baseline text-xs">
+                              <span className="font-bold text-dark uppercase tracking-wider">Database Size</span>
+                              <div className="flex items-center space-x-2">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 border rounded-full ${badgeColor}`}>
+                                  {badgeText}
+                                </span>
+                                <span className="font-bold text-dark">{formatBytes(dbUsed)} / {formatBytes(dbLimit)} ({dbPct}%)</span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-bg h-2.5 rounded-full overflow-hidden">
+                              <div className={`h-full transition-all duration-500 rounded-full ${colorClass}`} style={{ width: `${dbPct}%` }} />
+                            </div>
+                            {dbPct >= 80 && (
+                              <p className="text-[11px] font-semibold text-red-600">
+                                ⚠️ Database usage is high! Please consider deleting old order logs or archiving unused records to free space.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* File Storage Monitor */}
+                      {(() => {
+                        const storeUsed = usageStats.storage_size_bytes || 0;
+                        const storeLimit = usageStats.storage_limit_bytes || 1073741824;
+                        const storePct = Math.min(100, parseFloat(((storeUsed / storeLimit) * 100).toFixed(2)));
+                        
+                        let colorClass = 'bg-emerald-500';
+                        let badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                        let badgeText = 'Normal';
+                        if (storePct >= 95) {
+                          colorClass = 'bg-red-500';
+                          badgeColor = 'bg-red-50 text-red-700 border-red-200';
+                          badgeText = 'Critical';
+                        } else if (storePct >= 80) {
+                          colorClass = 'bg-amber-500';
+                          badgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                          badgeText = 'Warning';
+                        }
+
+                        return (
+                          <div className="space-y-2.5">
+                            <div className="flex justify-between items-baseline text-xs">
+                              <span className="font-bold text-dark uppercase tracking-wider">File Storage (sdb-images)</span>
+                              <div className="flex items-center space-x-2">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 border rounded-full ${badgeColor}`}>
+                                  {badgeText}
+                                </span>
+                                <span className="font-bold text-dark">{formatBytes(storeUsed)} / {formatBytes(storeLimit)} ({storePct}%)</span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-bg h-2.5 rounded-full overflow-hidden">
+                              <div className={`h-full transition-all duration-500 rounded-full ${colorClass}`} style={{ width: `${storePct}%` }} />
+                            </div>
+                            {storePct >= 80 && (
+                              <p className="text-[11px] font-semibold text-red-600">
+                                ⚠️ File storage usage is high! Please delete old slider banners or product images to reduce storage consumption.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -661,7 +898,7 @@ export default function AdminDashboard() {
                   <button 
                     onClick={() => {
                       setEditingId(null);
-                      setProductForm({ name: '', slug: '', description: '', price: 0, category_id: '', images: [''], in_stock: true });
+                      setProductForm({ name: '', slug: '', description: '', price: 0, category_id: '', images: [''], in_stock: true, stock: 10 });
                       setShowProductModal(true);
                     }}
                     className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer"
@@ -694,6 +931,7 @@ export default function AdminDashboard() {
                         <th className="p-4">Name / Slug</th>
                         <th className="p-4">Category</th>
                         <th className="p-4">Price</th>
+                        <th className="p-4 text-center">Stock</th>
                         <th className="p-4 text-center">In Stock</th>
                         <th className="p-4 text-right">Actions</th>
                       </tr>
@@ -712,6 +950,7 @@ export default function AdminDashboard() {
                           </td>
                           <td className="p-4 text-muted">{prod.categories?.name || 'Unassigned'}</td>
                           <td className="p-4 font-bold text-dark">{formatCurrency(prod.price)}</td>
+                          <td className="p-4 text-center font-semibold text-dark">{prod.stock !== undefined && prod.stock !== null ? prod.stock : 0}</td>
                           <td className="p-4 text-center">
                             <button 
                               onClick={() => toggleProductStock(prod.id, prod.in_stock)}
@@ -736,7 +975,8 @@ export default function AdminDashboard() {
                                     price: prod.price,
                                     category_id: prod.category_id || '',
                                     images: prod.images?.length > 0 ? prod.images : [''],
-                                    in_stock: prod.in_stock
+                                    in_stock: prod.in_stock,
+                                    stock: prod.stock !== undefined && prod.stock !== null ? prod.stock : 10
                                   });
                                   setShowProductModal(true);
                                 }}
@@ -784,8 +1024,9 @@ export default function AdminDashboard() {
 
                       <div className="flex justify-between items-center border-t border-border/40 pt-3">
                         <div>
-                          <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Price</span>
+                          <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Price / Stock</span>
                           <span className="font-bold text-dark text-sm">{formatCurrency(prod.price)}</span>
+                          <span className="text-[11px] text-muted block">Stock: {prod.stock !== undefined && prod.stock !== null ? prod.stock : 0}</span>
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center space-x-1.5">
@@ -815,7 +1056,8 @@ export default function AdminDashboard() {
                               price: prod.price,
                               category_id: prod.category_id || '',
                               images: prod.images?.length > 0 ? prod.images : [''],
-                              in_stock: prod.in_stock
+                              in_stock: prod.in_stock,
+                              stock: prod.stock !== undefined && prod.stock !== null ? prod.stock : 10
                             });
                             setShowProductModal(true);
                           }}
@@ -967,7 +1209,20 @@ export default function AdminDashboard() {
                   <button 
                     onClick={() => {
                       setEditingId(null);
-                      setCouponForm({ code: '', discount_type: 'percent', discount_value: 0, is_active: true });
+                      setCouponForm({
+                        code: '',
+                        discount_type: 'percent',
+                        discount_value: 0,
+                        is_active: true,
+                        min_order_amount: 0,
+                        max_discount_amount: '',
+                        start_date: '',
+                        end_date: '',
+                        usage_limit: '',
+                        usage_limit_per_customer: '',
+                        applicable_product_ids: [],
+                        applicable_category_ids: []
+                      });
                       setShowCouponModal(true);
                     }}
                     className="flex items-center space-x-1.5 bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-primary/95 cursor-pointer shrink-0"
@@ -992,10 +1247,24 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-border/40">
                       {coupons.map(coup => (
                         <tr key={coup.id} className="hover:bg-bg/25">
-                          <td className="p-4 font-mono font-bold text-dark text-sm">{coup.code}</td>
-                          <td className="p-4 text-muted capitalize">{coup.discount_type === 'percent' ? 'Percentage' : 'Flat Off'}</td>
+                          <td className="p-4">
+                            <div className="font-mono font-bold text-dark text-sm">{coup.code}</div>
+                            {coup.min_order_amount > 0 && (
+                              <div className="text-[10px] text-muted font-medium">Min Order: ₹{coup.min_order_amount}</div>
+                            )}
+                            {coup.usage_limit_per_customer && (
+                              <div className="text-[10px] text-muted font-medium">Limit: {coup.usage_limit_per_customer}/user</div>
+                            )}
+                          </td>
+                          <td className="p-4 text-muted capitalize">
+                            {coup.discount_type === 'percent' ? 'Percentage' : 'Flat Off'}
+                            {coup.max_discount_amount && (
+                              <span className="text-[10px] text-muted block">Max: ₹{coup.max_discount_amount}</span>
+                            )}
+                          </td>
                           <td className="p-4 font-semibold text-dark">
                             {coup.discount_type === 'percent' ? `${coup.discount_value}%` : formatCurrency(coup.discount_value)}
+                            <span className="text-[10px] text-muted block">Used: {coup.used_count || 0}{coup.usage_limit ? `/${coup.usage_limit}` : ''}</span>
                           </td>
                           <td className="p-4 text-center">
                             <button 
@@ -1018,7 +1287,15 @@ export default function AdminDashboard() {
                                     code: coup.code,
                                     discount_type: coup.discount_type as 'percent' | 'flat',
                                     discount_value: coup.discount_value,
-                                    is_active: coup.is_active
+                                    is_active: coup.is_active,
+                                    min_order_amount: coup.min_order_amount || 0,
+                                    max_discount_amount: coup.max_discount_amount || '',
+                                    start_date: coup.start_date ? new Date(coup.start_date).toISOString().slice(0, 16) : '',
+                                    end_date: coup.end_date ? new Date(coup.end_date).toISOString().slice(0, 16) : '',
+                                    usage_limit: coup.usage_limit || '',
+                                    usage_limit_per_customer: coup.usage_limit_per_customer || '',
+                                    applicable_product_ids: coup.applicable_product_ids || [],
+                                    applicable_category_ids: coup.applicable_category_ids || []
                                   });
                                   setShowCouponModal(true);
                                 }}
@@ -1067,12 +1344,15 @@ export default function AdminDashboard() {
                         <div>
                           <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Discount Type</span>
                           <span className="font-semibold text-dark text-xs capitalize">{coup.discount_type === 'percent' ? 'Percentage Off' : 'Flat Off'}</span>
+                          {coup.max_discount_amount && <span className="text-[10px] text-muted block">Max cap: ₹{coup.max_discount_amount}</span>}
+                          {coup.min_order_amount > 0 && <span className="text-[10px] text-muted block">Min order: ₹{coup.min_order_amount}</span>}
                         </div>
                         <div className="text-right">
-                          <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Value</span>
+                          <span className="text-muted block text-[9px] uppercase tracking-wider font-bold">Value / Usage</span>
                           <span className="font-bold text-dark text-sm">
                             {coup.discount_type === 'percent' ? `${coup.discount_value}%` : formatCurrency(coup.discount_value)}
                           </span>
+                          <span className="text-[10px] text-muted block">Used: {coup.used_count || 0}{coup.usage_limit ? `/${coup.usage_limit}` : ''}</span>
                         </div>
                       </div>
 
@@ -1084,7 +1364,15 @@ export default function AdminDashboard() {
                               code: coup.code,
                               discount_type: coup.discount_type as 'percent' | 'flat',
                               discount_value: coup.discount_value,
-                              is_active: coup.is_active
+                              is_active: coup.is_active,
+                              min_order_amount: coup.min_order_amount || 0,
+                              max_discount_amount: coup.max_discount_amount || '',
+                              start_date: coup.start_date ? new Date(coup.start_date).toISOString().slice(0, 16) : '',
+                              end_date: coup.end_date ? new Date(coup.end_date).toISOString().slice(0, 16) : '',
+                              usage_limit: coup.usage_limit || '',
+                              usage_limit_per_customer: coup.usage_limit_per_customer || '',
+                              applicable_product_ids: coup.applicable_product_ids || [],
+                              applicable_category_ids: coup.applicable_category_ids || []
                             });
                             setShowCouponModal(true);
                           }}
@@ -1450,15 +1738,65 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Image URL</label>
-                <input 
-                  type="text"
-                  value={heroForm.image_url}
-                  onChange={e => setHeroForm(prev => ({ ...prev, image_url: e.target.value }))}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
-                  required
-                />
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Banner Image</label>
+                <div className="flex items-center gap-4">
+                  {heroForm.image_url ? (
+                    <div className="relative h-16 w-28 rounded-lg bg-bg border border-border overflow-hidden shrink-0 group">
+                      <img src={heroForm.image_url} alt="" className="object-cover w-full h-full" />
+                      <button
+                        type="button"
+                        onClick={() => setHeroForm(prev => ({ ...prev, image_url: '' }))}
+                        className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full p-1 transition-colors cursor-pointer"
+                        title="Remove Image"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="h-16 w-28 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center cursor-pointer transition-colors hover:bg-bg/40 shrink-0">
+                      {uploading ? (
+                        <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                      ) : (
+                        <>
+                          <span className="text-lg">📸</span>
+                          <span className="text-[9px] font-bold text-muted uppercase mt-0.5">Upload Banner</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files || files.length === 0) return;
+                          setUploading(true);
+                          try {
+                            const file = files[0];
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `hero_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                            
+                            const { error } = await supabase.storage
+                              .from('sdb-images')
+                              .upload(fileName, file);
+                            if (error) throw error;
+
+                            const { data: { publicUrl } } = supabase.storage
+                              .from('sdb-images')
+                              .getPublicUrl(fileName);
+
+                            setHeroForm(prev => ({ ...prev, image_url: publicUrl }));
+                          } catch (err: any) {
+                            alert(`Upload failed: ${err.message}`);
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                  <span className="text-xs text-muted">Upload or capture a wide banner slide image.</span>
+                </div>
               </div>
               <div className="pt-4 border-t border-border flex justify-end space-x-3">
                 <button 
@@ -1604,14 +1942,64 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Image URL</label>
-                <input 
-                  type="text"
-                  value={categoryForm.image_url}
-                  onChange={e => setCategoryForm(prev => ({ ...prev, image_url: e.target.value }))}
-                  placeholder="https://..."
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
-                />
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Category Image</label>
+                <div className="flex items-center gap-4">
+                  {categoryForm.image_url ? (
+                    <div className="relative h-16 w-16 rounded-lg bg-bg border border-border overflow-hidden shrink-0 group">
+                      <img src={categoryForm.image_url} alt="" className="object-cover w-full h-full" />
+                      <button
+                        type="button"
+                        onClick={() => setCategoryForm(prev => ({ ...prev, image_url: '' }))}
+                        className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full p-1 transition-colors cursor-pointer"
+                        title="Remove Image"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="h-16 w-16 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center cursor-pointer transition-colors hover:bg-bg/40 shrink-0">
+                      {uploading ? (
+                        <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                      ) : (
+                        <>
+                          <span className="text-lg">📸</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files || files.length === 0) return;
+                          setUploading(true);
+                          try {
+                            const file = files[0];
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `category_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                            
+                            const { error } = await supabase.storage
+                              .from('sdb-images')
+                              .upload(fileName, file);
+                            if (error) throw error;
+
+                            const { data: { publicUrl } } = supabase.storage
+                              .from('sdb-images')
+                              .getPublicUrl(fileName);
+
+                            setCategoryForm(prev => ({ ...prev, image_url: publicUrl }));
+                          } catch (err: any) {
+                            alert(`Upload failed: ${err.message}`);
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                  <span className="text-xs text-muted">Upload or take a photo for this category.</span>
+                </div>
               </div>
               <div className="pt-4 border-t border-border flex justify-end space-x-3">
                 <button 
@@ -1638,14 +2026,14 @@ export default function AdminDashboard() {
          ========================================================================= */}
       {showCouponModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-border my-8">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-border my-8">
             <div className="p-5 border-b border-border flex justify-between items-center bg-bg/40">
               <h3 className="font-display font-bold text-dark text-base">{editingId ? 'Edit Coupon' : 'Add New Coupon'}</h3>
               <button onClick={() => setShowCouponModal(false)} className="text-muted hover:text-dark cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={handleCouponSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleCouponSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-dark uppercase tracking-wider block">Code</label>
                 <input 
@@ -1679,6 +2067,124 @@ export default function AdminDashboard() {
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Min Order Amount (₹)</label>
+                  <input 
+                    type="number"
+                    value={couponForm.min_order_amount || ''}
+                    onChange={e => setCouponForm(prev => ({ ...prev, min_order_amount: Number(e.target.value) }))}
+                    placeholder="e.g. 499"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Max Discount Amount (₹)</label>
+                  <input 
+                    type="number"
+                    value={couponForm.max_discount_amount || ''}
+                    onChange={e => setCouponForm(prev => ({ ...prev, max_discount_amount: e.target.value }))}
+                    placeholder="Percentage cap only"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Start Date</label>
+                  <input 
+                    type="datetime-local"
+                    value={couponForm.start_date || ''}
+                    onChange={e => setCouponForm(prev => ({ ...prev, start_date: e.target.value }))}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">End Date</label>
+                  <input 
+                    type="datetime-local"
+                    value={couponForm.end_date || ''}
+                    onChange={e => setCouponForm(prev => ({ ...prev, end_date: e.target.value }))}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Overall Usage Limit</label>
+                  <input 
+                    type="number"
+                    value={couponForm.usage_limit || ''}
+                    onChange={e => setCouponForm(prev => ({ ...prev, usage_limit: e.target.value }))}
+                    placeholder="Total allowed uses"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Limit Per Customer</label>
+                  <input 
+                    type="number"
+                    value={couponForm.usage_limit_per_customer || ''}
+                    onChange={e => setCouponForm(prev => ({ ...prev, usage_limit_per_customer: e.target.value }))}
+                    placeholder="Limit per phone"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Category constraints */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Applies to Categories (Select none for all)</label>
+                <div className="border border-border rounded-lg p-2 max-h-24 overflow-y-auto space-y-1 bg-bg">
+                  {categories.map(cat => (
+                    <label key={cat.id} className="flex items-center space-x-2 text-xs font-semibold text-dark cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={couponForm.applicable_category_ids?.includes(cat.id) || false}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          setCouponForm(prev => {
+                            const current = prev.applicable_category_ids || [];
+                            const next = checked ? [...current, cat.id] : current.filter(id => id !== cat.id);
+                            return { ...prev, applicable_category_ids: next };
+                          });
+                        }}
+                        className="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5"
+                      />
+                      <span>{cat.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Product constraints */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Applies to Products (Select none for all)</label>
+                <div className="border border-border rounded-lg p-2 max-h-32 overflow-y-auto space-y-1 bg-bg">
+                  {products.map(prod => (
+                    <label key={prod.id} className="flex items-center space-x-2 text-xs font-semibold text-dark cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={couponForm.applicable_product_ids?.includes(prod.id) || false}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          setCouponForm(prev => {
+                            const current = prev.applicable_product_ids || [];
+                            const next = checked ? [...current, prod.id] : current.filter(id => id !== prod.id);
+                            return { ...prev, applicable_product_ids: next };
+                          });
+                        }}
+                        className="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5"
+                      />
+                      <span>{prod.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center space-x-2 pt-2">
                 <input 
                   type="checkbox"
@@ -1786,50 +2292,76 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Product Images URLs</label>
-                  <button 
-                    type="button" 
-                    onClick={addImageRow}
-                    className="text-xs font-semibold text-primary hover:underline cursor-pointer"
-                  >
-                    + Add Image Link Row
-                  </button>
-                </div>
-
-                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                  {productForm.images.map((img, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input 
-                        type="text"
-                        value={img}
-                        onChange={e => handleImageChange(idx, e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="flex-grow bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
-                      />
-                      {productForm.images.length > 1 && (
-                        <button 
-                          type="button" 
+                <label className="text-xs font-bold text-dark uppercase tracking-wider block">Product Images</label>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {productForm.images.map((img, idx) => {
+                    if (!img.trim()) return null;
+                    return (
+                      <div key={idx} className="relative aspect-square rounded-lg bg-bg border border-border overflow-hidden group">
+                        <img src={img} alt="" className="object-cover w-full h-full" />
+                        <button
+                          type="button"
                           onClick={() => removeImageRow(idx)}
-                          className="p-2 border border-border rounded hover:bg-bg text-muted hover:text-primary cursor-pointer"
+                          className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full p-1 transition-colors cursor-pointer"
+                          title="Remove Image"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3" />
                         </button>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
+                  
+                  <label className="relative aspect-square rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center p-3 text-center cursor-pointer transition-colors hover:bg-bg/40">
+                    {uploading ? (
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                    ) : (
+                      <>
+                        <span className="text-lg">📸</span>
+                        <span className="text-[9px] font-bold text-muted uppercase mt-1">Upload / Photo</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 pt-2">
-                <input 
-                  type="checkbox"
-                  id="in_stock"
-                  checked={productForm.in_stock}
-                  onChange={e => setProductForm(prev => ({ ...prev, in_stock: e.target.checked }))}
-                  className="rounded border-border text-primary focus:ring-primary h-4 w-4"
-                />
-                <label htmlFor="in_stock" className="text-sm font-semibold text-dark cursor-pointer">Product in stock</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-dark uppercase tracking-wider block">Stock Quantity</label>
+                  <input 
+                    type="number"
+                    value={productForm.stock}
+                    onChange={e => {
+                      const newStock = Number(e.target.value);
+                      setProductForm(prev => ({ 
+                        ...prev, 
+                        stock: newStock,
+                        in_stock: newStock > 0 
+                      }));
+                    }}
+                    placeholder="e.g. 10"
+                    min="0"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-dark focus:outline-none"
+                    required
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2 pt-5">
+                  <input 
+                    type="checkbox"
+                    id="in_stock"
+                    checked={productForm.in_stock}
+                    onChange={e => setProductForm(prev => ({ ...prev, in_stock: e.target.checked }))}
+                    className="rounded border-border text-primary focus:ring-primary h-4 w-4"
+                  />
+                  <label htmlFor="in_stock" className="text-sm font-semibold text-dark cursor-pointer">Product in stock</label>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-border flex justify-end space-x-3">
