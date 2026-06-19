@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, Minus, Plus, Check, ShieldCheck, Truck, MessageSquare } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -25,6 +26,7 @@ interface ProductDetailClientProps {
 }
 
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
+  const router = useRouter();
   const { addToCart } = useCart();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -79,6 +81,21 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
+  };
+
+  const handleBuyNow = () => {
+    if (isOutOfStock) return;
+
+    addToCart({
+      product_id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      image: images[0],
+      slug: product.slug,
+      category_id: product.category_id,
+    }, quantity);
+
+    router.push('/checkout');
   };
 
   return (
@@ -193,16 +210,16 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               </div>
             </div>
 
-            {/* Add to Cart button */}
-            <div className="flex gap-4">
+            {/* Add to Cart & Buy Now buttons */}
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
                 type="button"
                 onClick={handleAddToCart}
                 className={cn(
-                  'flex-grow inline-flex items-center justify-center rounded-lg py-3.5 px-8 text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer',
+                  'flex-1 inline-flex items-center justify-center rounded-lg py-3.5 px-8 text-sm font-bold shadow-sm transition-all duration-200 cursor-pointer border-2',
                   isAdded
-                    ? 'bg-emerald-700 hover:bg-emerald-800'
-                    : 'bg-[#D6A313] hover:bg-[#b88b0f] text-white hover:shadow-lg'
+                    ? 'bg-emerald-700 hover:bg-emerald-800 border-emerald-700 text-white'
+                    : 'bg-white hover:bg-gray-50 border-[#D6A313] text-[#D6A313] hover:shadow-md'
                 )}
               >
                 {isAdded ? (
@@ -216,6 +233,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     Add to Cart
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="flex-1 inline-flex items-center justify-center rounded-lg py-3.5 px-8 text-sm font-bold text-white bg-[#D6A313] hover:bg-[#b88b0f] shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer"
+              >
+                Buy Now
               </button>
             </div>
           </div>

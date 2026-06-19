@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, Minus, Plus, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -25,6 +26,7 @@ export interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
   const { addToCart, updateQuantity, cartItems } = useCart();
   const [isSuccess, setIsSuccess] = useState(false);
   const mainImage = product.images?.[0] || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=400';
@@ -74,6 +76,24 @@ export default function ProductCard({ product }: ProductCardProps) {
     setTimeout(() => {
       setIsSuccess(false);
     }, 850);
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isOutOfStock) return;
+
+    if (qty === 0) {
+      addToCart({
+        product_id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        image: mainImage,
+        slug: product.slug,
+        category_id: product.category_id,
+      }, 1);
+    }
+    router.push('/checkout');
   };
 
   const handleIncrease = (e: React.MouseEvent) => {
@@ -176,7 +196,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
 
-      {/* Add to Cart / Quantity Stepper */}
+      {/* Add to Cart / Quantity Stepper & Buy Now */}
       {(qty > 0 && !isSuccess && !isOutOfStock) ? (
         <div
           className="w-full flex items-center justify-between"
@@ -185,67 +205,88 @@ export default function ProductCard({ product }: ProductCardProps) {
             borderTop: '1px solid #E5E7EB',
             borderRadius: '0 0 12px 12px',
             minHeight: '46px',
+            overflow: 'hidden',
           }}
         >
+          <div className="flex-1 flex items-center justify-between bg-gray-100 h-full border-r border-gray-200">
+            <button
+              onClick={handleDecrease}
+              className="flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200"
+              style={{ width: '40px', height: '46px', color: '#D6A313' }}
+              aria-label="Decrease quantity"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span style={{ color: '#111827', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-sans), sans-serif' }}>
+              {qty}
+            </span>
+            <button
+              onClick={handleIncrease}
+              disabled={qty >= maxQty}
+              className="flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200 disabled:opacity-45"
+              style={{ width: '40px', height: '46px', color: '#D6A313' }}
+              aria-label="Increase quantity"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <button
-            onClick={handleDecrease}
-            className="flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200"
-            style={{ width: '52px', height: '46px', color: '#D6A313' }}
-            aria-label="Decrease quantity"
+            onClick={handleBuyNow}
+            className="flex-1 flex items-center justify-center bg-[#D6A313] hover:bg-[#b88b0f] text-white font-bold text-xs h-full min-h-[46px] cursor-pointer transition-all duration-200"
+            style={{ fontFamily: 'var(--font-sans), sans-serif' }}
           >
-            <Minus className="h-4 w-4" />
-          </button>
-          <span style={{ color: '#111827', fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-sans), sans-serif' }}>
-            {qty}
-          </span>
-          <button
-            onClick={handleIncrease}
-            disabled={qty >= maxQty}
-            className="flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200 disabled:opacity-45"
-            style={{ width: '52px', height: '46px', color: '#D6A313' }}
-            aria-label="Increase quantity"
-          >
-            <Plus className="h-4 w-4" />
+            Buy Now
           </button>
         </div>
       ) : (
-        <button
-          onClick={handleAdd}
-          disabled={isOutOfStock}
-          className={cn(
-            'w-full flex items-center justify-center gap-2 cursor-pointer transition-all duration-200',
-            isOutOfStock && 'cursor-not-allowed',
-            isSuccess && 'bg-emerald-600 text-white'
+        <div className="w-full flex" style={{ borderTop: '1px solid #E5E7EB', borderRadius: '0 0 12px 12px', overflow: 'hidden' }}>
+          <button
+            onClick={handleAdd}
+            disabled={isOutOfStock}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-200',
+              isOutOfStock && 'cursor-not-allowed',
+              isSuccess && 'bg-emerald-600 text-white'
+            )}
+            style={{
+              background: isSuccess
+                ? '#10B981'
+                : '#FFFFFF',
+              color: isSuccess ? '#FFFFFF' : (!isOutOfStock ? '#111827' : '#9CA3AF'),
+              fontWeight: 700,
+              fontSize: '12px',
+              fontFamily: 'var(--font-sans), sans-serif',
+              padding: '12px 6px',
+              minHeight: '46px',
+              borderRight: (isSuccess || isOutOfStock) ? 'none' : '1px solid #E5E7EB',
+            }}
+            onMouseEnter={(e) => { if (!isOutOfStock && !isSuccess) e.currentTarget.style.background = '#F9FAFB'; }}
+            onMouseLeave={(e) => { if (!isOutOfStock && !isSuccess) e.currentTarget.style.background = '#FFFFFF'; }}
+            aria-label={isSuccess ? "Added to Cart" : "Add to Cart"}
+          >
+            {isSuccess ? (
+              <>
+                <Check className="h-3.5 w-3.5 animate-bounce" />
+                <span>Added!</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-3.5 w-3.5" />
+                <span>{isOutOfStock ? 'Sold Out' : 'Add to Cart'}</span>
+              </>
+            )}
+          </button>
+          
+          {!isOutOfStock && (
+            <button
+              onClick={handleBuyNow}
+              className="flex-1 flex items-center justify-center bg-[#D6A313] hover:bg-[#b88b0f] text-white font-bold text-xs min-h-[46px] cursor-pointer transition-all duration-200"
+              style={{ fontFamily: 'var(--font-sans), sans-serif' }}
+            >
+              Buy Now
+            </button>
           )}
-          style={{
-            background: isSuccess
-              ? '#10B981'
-              : (!isOutOfStock ? '#D6A313' : '#F3F4F6'),
-            color: (!isOutOfStock || isSuccess) ? '#FFFFFF' : '#9CA3AF',
-            fontWeight: 700,
-            fontSize: '13px',
-            fontFamily: 'var(--font-sans), sans-serif',
-            padding: '13px 16px',
-            borderTop: '1px solid #E5E7EB',
-            borderRadius: '0 0 12px 12px',
-            minHeight: '46px',
-          }}
-          onMouseEnter={(e) => { if (!isOutOfStock && !isSuccess) e.currentTarget.style.background = '#b88b0f'; }}
-          onMouseLeave={(e) => { if (!isOutOfStock && !isSuccess) e.currentTarget.style.background = '#D6A313'; }}
-          aria-label={isSuccess ? "Added to Cart" : "Add to Cart"}
-        >
-          {isSuccess ? (
-            <>
-              <Check className="h-4 w-4 animate-bounce" />
-              <span>Added!</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="h-4 w-4" />
-              <span>{isOutOfStock ? 'Sold Out' : 'Add to Cart'}</span>
-            </>
-          )}
-        </button>
+        </div>
       )}
     </div>
   );
