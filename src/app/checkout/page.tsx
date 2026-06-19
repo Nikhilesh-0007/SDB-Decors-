@@ -389,7 +389,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 tracking-wider uppercase mb-1.5">Email Address</label>
+                  <label className="block text-xs font-bold text-gray-700 tracking-wider uppercase mb-1.5">Email Address (Optional)</label>
                   <div className="relative">
                     <input
                       type="email"
